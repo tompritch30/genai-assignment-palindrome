@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "case_id": "case_04_inheritance_partial",
+    "case_name": "Inheritance with Incomplete Deceased's Source of Wealth",
+    "complexity": "medium",
+    "account_holder": {
+      "name": "Eleanor Hughes",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 680000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_001",
+      "description": "Inheritance from mother's estate",
+      "extracted_fields": {
+        "deceased_name": "Patricia Hughes (mother)",
+        "relationship_to_deceased": "Mother",
+        "date_of_death": "15th October 2021",
+        "amount_inherited": "£680,000",
+        "nature_of_inherited_assets": "Property sale proceeds (£520,000) plus savings and investments (£160,000)",
+        "original_source_of_deceased_wealth": "Teacher for over 30 years; property originally purchased in 1970s"
+      },
+      "missing_fields": [
+        {
+          "field_name": "original_source_of_deceased_wealth",
+          "reason": "Incomplete - teaching career explains income but does not fully account for £680,000 accumulation. Additional details needed on how the Cheltenham property appreciated or if there were other contributors (e.g., deceased's spouse's income, other inheritance)",
+          "partially_answered": true
+        }
+      ],
+      "completeness_score": 0.92,
+      "notes": "While teaching career is mentioned, the full explanation of how a teacher accumulated £680,000 in assets requires more context. Property appreciation is implied but not explicitly quantified."
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 1,
+    "fully_complete_sources": 0,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.92,
+    "notes": "Key gap: Deceased's source of wealth is partially explained but may require follow-up. A teacher's salary alone typically wouldn't generate this level of wealth - need clarification on property purchase circumstances (inheritance from deceased's parents? spouse's contribution?)."
+  },
+  "recommended_follow_up_questions": [
+    "How did your parents originally acquire the Cheltenham property in the 1970s?",
+    "Did your father contribute to the household wealth, and if so, what was his occupation?",
+    "Were there any other inheritances your mother received that contributed to her estate?"
+  ]
+}

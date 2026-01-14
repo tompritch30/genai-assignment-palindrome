@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "case_id": "case_03_employment_property",
+    "case_name": "Employment + Property Sale Combined",
+    "complexity": "medium",
+    "account_holder": {
+      "name": "David Chen",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 2200000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Current position as Partner at McKinsey & Company",
+      "extracted_fields": {
+        "employer_name": "McKinsey & Company",
+        "job_title": "Partner",
+        "employment_start_date": "January 2014 (as Partner); 2010 (as Associate Partner)",
+        "employment_end_date": "Present",
+        "annual_compensation": "£450,000 (including base, bonus, and profit share)",
+        "country_of_employment": "United Kingdom (London office)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_002",
+      "description": "Previous position as Associate Partner at McKinsey",
+      "extracted_fields": {
+        "employer_name": "McKinsey & Company",
+        "job_title": "Associate Partner",
+        "employment_start_date": "2010",
+        "employment_end_date": "2013",
+        "annual_compensation": "£280,000",
+        "country_of_employment": "United Kingdom"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_003",
+      "description": "Sale of buy-to-let investment property in Manchester",
+      "extracted_fields": {
+        "property_address": "Flat 12, Waterside Apartments, Manchester M3 4JR",
+        "property_type": "Buy-to-let investment",
+        "original_acquisition_method": "Purchased using employment savings",
+        "original_acquisition_date": "August 2015",
+        "original_purchase_price": "£225,000",
+        "sale_date": "June 2023",
+        "sale_proceeds": "£365,000 (net proceeds after costs; gross £385,000)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0,
+    "notes": "Excellent documentation. Clear chain showing employment savings used to fund property investment. All required fields present."
+  }
+}

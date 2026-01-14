@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "case_id": "case_12_divorce_chain",
+    "case_name": "Divorce Settlement Leading to Property Investment and Sale",
+    "complexity": "edge_case",
+    "account_holder": {
+      "name": "Rebecca Hartley",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 1300000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "divorce_settlement",
+      "source_id": "SOW_001",
+      "description": "Divorce settlement from Daniel Hartley",
+      "extracted_fields": {
+        "former_spouse_name": "Daniel Hartley",
+        "settlement_date": "September 2019",
+        "settlement_amount": "£1,200,000",
+        "court_jurisdiction": "Family Court, London (England and Wales)",
+        "duration_of_marriage": "12 years"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "spouse_wealth_context": {
+        "former_spouse_occupation": "Hedge fund manager",
+        "notes": "Settlement represented share of marital assets including home equity, pension sharing, and liquid savings"
+      }
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_002",
+      "description": "Sale of Richmond townhouse (purchased with divorce settlement funds)",
+      "extracted_fields": {
+        "property_address": "Richmond, London",
+        "property_type": "Townhouse - Primary residence",
+        "original_acquisition_method": "Purchased using divorce settlement funds",
+        "original_acquisition_date": "February 2020",
+        "original_purchase_price": "£450,000",
+        "sale_date": "October 2023",
+        "sale_proceeds": "£580,000 (net after mortgage repayment of £180,000 and costs; gross £780,000)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "source_chain": {
+        "original_funds": "Divorce settlement (SOW_001)",
+        "transformation": "Settlement funds → Property purchase → Property sale with appreciation"
+      }
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_003",
+      "description": "Part-time interior design consultancy",
+      "extracted_fields": {
+        "employer_name": "Self-employed / Consultant",
+        "job_title": "Interior Design Consultant",
+        "employment_start_date": "2020",
+        "employment_end_date": "Present",
+        "annual_compensation": "£45,000",
+        "country_of_employment": "United Kingdom"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "notes": "Supplementary income - not primary source of wealth"
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0,
+    "wealth_flow_analysis": {
+      "step_1": "Divorce settlement: £1,200,000 received September 2019",
+      "step_2": "Property purchase: £450,000 used February 2020 (remaining £750,000 retained)",
+      "step_3": "Living expenses: ~4 years at estimated £45,000+ annually, offset by employment income",
+      "step_4": "Property sale: £580,000 net proceeds October 2023",
+      "step_5": "Current wealth: £750,000 (retained settlement) + £580,000 (property sale) ≈ £1,330,000"
+    }
+  },
+  "source_chain_documentation": {
+    "primary_origin": "Divorce settlement from former spouse (hedge fund manager)",
+    "transformation_events": [
+      {
+        "event": "Property purchase",
+        "date": "February 2020",
+        "amount": "£450,000 from settlement"
+      },
+      {
+        "event": "Property improvements",
+        "period": "2020-2023",
+        "amount": "Unspecified"
+      },
+      {
+        "event": "Property sale",
+        "date": "October 2023",
+        "proceeds": "£580,000 net"
+      }
+    ],
+    "notes": "Clear chain from divorce settlement through property investment and sale. Well-documented transformation of assets."
+  },
+  "compliance_notes": "Divorce settlement as SOW requires understanding of former spouse's wealth source (hedge fund management income)"
+}

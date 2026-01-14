@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "case_id": "case_09_nested_inheritance_dividends",
+    "case_name": "Inherited Business Generating Ongoing Dividends",
+    "complexity": "complex",
+    "account_holder": {
+      "name": "Victoria Palmer",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 2600000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_001",
+      "description": "Inheritance of business shares and cash from uncle",
+      "extracted_fields": {
+        "deceased_name": "Charles Palmer (uncle)",
+        "relationship_to_deceased": "Uncle",
+        "date_of_death": "August 2019",
+        "amount_inherited": "~£2,100,000 (£1,800,000 in shares + £300,000 cash/investments)",
+        "nature_of_inherited_assets": "60% shareholding in Palmer & Sons Logistics Ltd plus cash and investment accounts",
+        "original_source_of_deceased_wealth": "Built Palmer & Sons Logistics Ltd from scratch starting in 1994 with two trucks"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "business_dividends",
+      "source_id": "SOW_002",
+      "description": "Ongoing dividend income from inherited business",
+      "extracted_fields": {
+        "company_name": "Palmer & Sons Logistics Ltd",
+        "shareholding_percentage": "60%",
+        "dividend_amount": "Variable: £95,000 (2020), £120,000 (2021), £140,000 (2022), £155,000 (2023)",
+        "period_received": "2020 - Present (annually since inheritance)",
+        "how_shares_acquired": "Inherited from uncle (Charles Palmer) in August 2019"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 2,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0,
+    "wealth_composition": {
+      "inherited_shares_current_value": "~£2,100,000",
+      "accumulated_dividends_net_of_tax": "~£400,000",
+      "inherited_cash": "~£300,000 (partially spent/invested)",
+      "total": "~£2,600,000"
+    },
+    "notes": "Excellent example of nested/layered source of wealth: inheritance → ongoing business dividends. Clear chain of ownership established."
+  },
+  "source_chain_analysis": {
+    "layer_1": {
+      "type": "inheritance",
+      "from": "Uncle Charles Palmer",
+      "date": "August 2019",
+      "value": "~£2.1M"
+    },
+    "layer_2": {
+      "type": "business_dividends",
+      "derived_from": "Inherited shareholding",
+      "ongoing": true,
+      "annual_yield": "£95,000 - £155,000"
+    },
+    "original_source": {
+      "type": "Business built by deceased",
+      "entity": "Palmer & Sons Logistics Ltd",
+      "founded": "1994",
+      "description": "Freight and haulage company with 50+ vehicles and major retail contracts"
+    }
+  },
+  "compliance_notes": "Passive investment - account holder does not manage day-to-day operations (handled by Operations Director who owns remaining 40%)"
+}

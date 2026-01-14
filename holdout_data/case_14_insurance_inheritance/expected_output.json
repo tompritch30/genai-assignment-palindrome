@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "case_id": "case_14_insurance_inheritance",
+    "case_name": "Life Insurance Payout Combined with Spousal Inheritance",
+    "complexity": "edge_case",
+    "account_holder": {
+      "name": "Graham Foster",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 780000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "insurance_payout",
+      "source_id": "SOW_001",
+      "description": "Life insurance payout following spouse's death",
+      "extracted_fields": {
+        "insurance_provider": "Legal & General",
+        "policy_type": "Life insurance",
+        "claim_event_description": "Death of spouse (Elizabeth Foster) following short illness",
+        "payout_date": "August 2022",
+        "payout_amount": "£400,000"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "policy_details": {
+        "policy_inception": "2010 (taken out during remortgage)",
+        "policyholder": "Elizabeth Foster (deceased spouse)",
+        "beneficiary": "Graham Foster (account holder)"
+      }
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_002",
+      "description": "Inheritance from spouse's estate",
+      "extracted_fields": {
+        "deceased_name": "Elizabeth Foster (spouse)",
+        "relationship_to_deceased": "Spouse (wife)",
+        "date_of_death": "June 2022",
+        "amount_inherited": "£180,000",
+        "nature_of_inherited_assets": "Savings and investments",
+        "original_source_of_deceased_wealth": "35-year career as Senior Nurse in NHS; consistent saving and pension contributions"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "notes": "Family home already jointly owned with right of survivorship - not included in estate value"
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_003",
+      "description": "Account holder's career savings",
+      "extracted_fields": {
+        "employer_name": null,
+        "job_title": "Electrician",
+        "employment_start_date": null,
+        "employment_end_date": "Present (or recently retired)",
+        "annual_compensation": null,
+        "country_of_employment": "United Kingdom (implied)"
+      },
+      "missing_fields": [
+        {
+          "field_name": "employer_name",
+          "reason": "Not specified - may be self-employed or employed"
+        },
+        {
+          "field_name": "employment_start_date",
+          "reason": "Career duration not specified"
+        },
+        {
+          "field_name": "annual_compensation",
+          "reason": "Income level not disclosed"
+        }
+      ],
+      "completeness_score": 0.33,
+      "notes": "Account holder's own savings of £200,000 mentioned but employment details sparse"
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.78,
+    "wealth_composition": {
+      "insurance_payout": "£400,000",
+      "inheritance_from_spouse": "£180,000",
+      "own_career_savings": "£200,000",
+      "total": "£780,000"
+    }
+  },
+  "overlapping_sources_analysis": {
+    "note": "Insurance payout and inheritance both stem from spouse's death but are distinct sources",
+    "insurance": "Contractual payout from life insurance policy",
+    "inheritance": "Estate assets (savings/investments) passing under will or intestacy",
+    "key_distinction": "Insurance proceeds are not part of the estate - they pass directly to named beneficiary"
+  },
+  "compliance_considerations": {
+    "insurance_verification": "Policy details provided (provider, inception date, trigger event)",
+    "inheritance_chain": "Deceased's wealth clearly explained (NHS career, consistent saving)",
+    "marriage_duration": "31 years - establishes legitimate spousal relationship"
+  },
+  "recommended_follow_up_questions": [
+    "What is the name of your employer or are you self-employed as an electrician?",
+    "How long have you worked as an electrician?",
+    "What is/was your approximate annual income from this work?",
+    "Have you now retired, and if so, when?"
+  ]
+}

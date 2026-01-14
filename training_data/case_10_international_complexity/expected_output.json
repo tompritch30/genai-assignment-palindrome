@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "case_id": "case_10_international_complexity",
+    "case_name": "Multi-Jurisdiction Sources (UAE, UK, India)",
+    "complexity": "complex",
+    "account_holder": {
+      "name": "Dr. Amir Hassan",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 3800000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "UAE employment at Emirates Healthcare Group",
+      "extracted_fields": {
+        "employer_name": "Emirates Healthcare Group",
+        "job_title": "Chief Medical Officer",
+        "employment_start_date": "March 2015",
+        "employment_end_date": "August 2023",
+        "annual_compensation": "AED 1,800,000 (~£400,000) - tax-free",
+        "country_of_employment": "United Arab Emirates (Dubai)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "jurisdiction_notes": {
+        "country": "UAE",
+        "tax_status": "Tax-free income",
+        "repatriated_amount": "~£2,200,000"
+      }
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_002",
+      "description": "UK property (retained, not sold)",
+      "extracted_fields": {
+        "property_address": "15 Wellington Court, Marylebone, London W1U 6QF",
+        "property_type": "Residential flat (former rental, now primary residence)",
+        "original_acquisition_method": "Purchased",
+        "original_acquisition_date": "February 2012",
+        "original_purchase_price": "£480,000",
+        "sale_date": "N/A - Property retained",
+        "sale_proceeds": "N/A - Current value ~£850,000"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "notes": "Property NOT sold - represents equity holding, not realised proceeds"
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_003",
+      "description": "Inheritance from father in India",
+      "extracted_fields": {
+        "deceased_name": "Dr. Rashid Hassan (father)",
+        "relationship_to_deceased": "Father",
+        "date_of_death": "January 2023",
+        "amount_inherited": "~INR 80,000,000 (~£800,000) - 50% share",
+        "nature_of_inherited_assets": "Cash savings, fixed deposits, proceeds from clinic premises sale",
+        "original_source_of_deceased_wealth": "Renowned private surgeon practicing for over 40 years in Mumbai"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "jurisdiction_notes": {
+        "country": "India",
+        "regulatory_compliance": "Funds transferred in compliance with RBI regulations and HMRC requirements",
+        "documentation": "Full documentation of inheritance and tax clearances from both jurisdictions"
+      }
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0,
+    "wealth_by_jurisdiction": {
+      "UAE": {
+        "source": "Employment savings",
+        "amount": "£2,200,000",
+        "status": "Repatriated to UK"
+      },
+      "UK": {
+        "source": "Property equity",
+        "amount": "£850,000 (current value)",
+        "status": "Retained asset"
+      },
+      "India": {
+        "source": "Inheritance",
+        "amount": "£800,000",
+        "status": "Transferred to UK"
+      }
+    },
+    "total_reconciliation": "UAE savings (£2.2M) + UK property (£0.85M) + India inheritance (£0.8M) ≈ £3.85M"
+  },
+  "compliance_considerations": {
+    "cross_border_transfers": [
+      {
+        "from": "UAE",
+        "to": "UK",
+        "amount": "£2,200,000",
+        "notes": "Repatriation of tax-free employment savings"
+      },
+      {
+        "from": "India",
+        "to": "UK",
+        "amount": "£800,000",
+        "notes": "RBI and HMRC compliant transfer; tax clearances obtained"
+      }
+    ],
+    "documentation_mentioned": "Full documentation of inheritance and tax clearances from both Indian and UK jurisdictions"
+  }
+}

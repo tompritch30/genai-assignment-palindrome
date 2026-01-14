@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "case_id": "case_11_vague_narrative",
+    "case_name": "Deliberately Vague/Incomplete Narrative",
+    "complexity": "edge_case",
+    "data_quality": "poor",
+    "account_holder": {
+      "name": "Thomas Wright",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 600000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Current employment in finance/banking",
+      "extracted_fields": {
+        "employer_name": "Unknown bank in London",
+        "job_title": null,
+        "employment_start_date": "~20 years ago (approximate career start)",
+        "employment_end_date": "Present (implied)",
+        "annual_compensation": "Described as 'good salary' - no figure provided",
+        "country_of_employment": "United Kingdom (London)"
+      },
+      "missing_fields": [
+        {
+          "field_name": "employer_name",
+          "reason": "Only described as 'a bank in London' - specific institution not named"
+        },
+        {
+          "field_name": "job_title",
+          "reason": "Not provided"
+        },
+        {
+          "field_name": "employment_start_date",
+          "reason": "Only vague reference to 'quite a while' at current employer; 20 years in industry total"
+        },
+        {
+          "field_name": "annual_compensation",
+          "reason": "Described only as 'good salary' - no quantification"
+        }
+      ],
+      "completeness_score": 0.33
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_002",
+      "description": "Inheritance from grandmother",
+      "extracted_fields": {
+        "deceased_name": "Grandmother (name not provided)",
+        "relationship_to_deceased": "Grandmother",
+        "date_of_death": "Unknown - 'sometime in the last five years'",
+        "amount_inherited": "~£100,000 or more (uncertainty expressed)",
+        "nature_of_inherited_assets": null,
+        "original_source_of_deceased_wealth": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "deceased_name",
+          "reason": "Only referred to as 'gran' - full name not provided"
+        },
+        {
+          "field_name": "date_of_death",
+          "reason": "Vague - 'sometime in the last five years'"
+        },
+        {
+          "field_name": "amount_inherited",
+          "reason": "Uncertain - 'around £100,000, maybe a bit more'"
+        },
+        {
+          "field_name": "nature_of_inherited_assets",
+          "reason": "Not specified - just 'some money'"
+        },
+        {
+          "field_name": "original_source_of_deceased_wealth",
+          "reason": "Not provided at all"
+        }
+      ],
+      "completeness_score": 0.33
+    },
+    {
+      "source_type": "sale_of_asset",
+      "source_id": "SOW_003",
+      "description": "Sale of investments/shares",
+      "extracted_fields": {
+        "asset_description": "Shares/investments (unspecified)",
+        "original_acquisition_method": "Built up over time",
+        "original_acquisition_date": null,
+        "sale_date": "Recently",
+        "sale_proceeds": "Described as 'reasonable amount' - no figure",
+        "buyer_identity": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "asset_description",
+          "reason": "Vague - just 'some shares' and 'investments'"
+        },
+        {
+          "field_name": "original_acquisition_date",
+          "reason": "Not specified"
+        },
+        {
+          "field_name": "sale_date",
+          "reason": "Only 'recently' - no specific date"
+        },
+        {
+          "field_name": "sale_proceeds",
+          "reason": "'Reasonable amount' - no quantification"
+        },
+        {
+          "field_name": "buyer_identity",
+          "reason": "Not provided"
+        }
+      ],
+      "completeness_score": 0.17
+    },
+    {
+      "source_type": "gift",
+      "source_id": "SOW_004",
+      "description": "Payment from friend related to business",
+      "extracted_fields": {
+        "donor_name": "A friend (unnamed)",
+        "relationship_to_donor": "Friend",
+        "gift_date": "A few years ago",
+        "gift_value": "~£50,000",
+        "donor_source_of_wealth": "Friend's business (unspecified)",
+        "reason_for_gift": "Repayment with 'extra' for helping with friend's business"
+      },
+      "missing_fields": [
+        {
+          "field_name": "donor_name",
+          "reason": "Friend not identified by name"
+        },
+        {
+          "field_name": "gift_date",
+          "reason": "'A few years ago' - not specific"
+        },
+        {
+          "field_name": "donor_source_of_wealth",
+          "reason": "Friend's business not described"
+        }
+      ],
+      "completeness_score": 0.50,
+      "compliance_flags": [
+        "Ambiguous whether this is a gift or repayment of a loan with interest",
+        "Nature of 'help' with business unclear - could be loan, investment, or services",
+        "Requires significant clarification"
+      ]
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 4,
+    "fully_complete_sources": 0,
+    "sources_with_missing_fields": 4,
+    "overall_completeness_score": 0.33,
+    "data_quality_assessment": "POOR - Multiple vague references, missing names, approximate dates, unquantified amounts"
+  },
+  "recommended_follow_up_questions": [
+    "What is the name of your current employer (the bank in London)?",
+    "What is your current job title and annual salary?",
+    "What was your grandmother's full name and when did she pass away?",
+    "What was the exact amount you inherited and in what form (cash, property, investments)?",
+    "How did your grandmother accumulate her wealth?",
+    "What specific investments did you sell recently and for how much?",
+    "What is the name of the friend who paid you £50,000?",
+    "Was this a repayment of a loan you made to them, or a gift? What was the nature of your help with their business?"
+  ],
+  "compliance_risk_flags": [
+    "Vague narrative may indicate reluctance to provide details",
+    "Friend 'repayment' structure needs clarification - potential undisclosed business arrangement",
+    "Total stated wealth (£600,000) difficult to reconcile with vague sources described"
+  ]
+}

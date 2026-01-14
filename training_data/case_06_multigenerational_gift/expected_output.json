@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "case_id": "case_06_multigenerational_gift",
+    "case_name": "Multi-generational Gift with Chain of Wealth",
+    "complexity": "complex",
+    "account_holder": {
+      "name": "Sophie Anderson",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 750000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "gift",
+      "source_id": "SOW_001",
+      "description": "Gift from grandfather",
+      "extracted_fields": {
+        "donor_name": "Harold Anderson (grandfather)",
+        "relationship_to_donor": "Grandfather",
+        "gift_date": "March 2023",
+        "gift_value": "£750,000",
+        "donor_source_of_wealth": "Sale of manufacturing business (Anderson Industrial Supplies) in 2003 for approximately £4 million",
+        "reason_for_gift": "Inheritance tax planning and desire to see grandchildren benefit during his lifetime"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "donor_wealth_chain": {
+        "level_1_source": {
+          "type": "sale_of_business",
+          "business_name": "Anderson Industrial Supplies",
+          "nature_of_business": "Manufacturing industrial fasteners for automotive companies",
+          "sale_date": "2003",
+          "sale_proceeds": "~£4,000,000",
+          "ownership_duration": "35 years (built by donor)",
+          "how_originally_acquired": "Founded by Harold Anderson"
+        },
+        "chain_completeness": "Complete - clear origin of donor's wealth established"
+      }
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 1,
+    "fully_complete_sources": 1,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0,
+    "notes": "Excellent documentation of gift including full chain to donor's original source of wealth. Gift letter and bank statements mentioned as supporting evidence."
+  },
+  "supporting_documentation_mentioned": [
+    "Signed gift letter from grandfather",
+    "Bank statements showing transfer"
+  ],
+  "compliance_notes": {
+    "inheritance_tax_considerations": "Gift made as part of IHT planning - 7 year rule applies",
+    "pattern_of_giving": "Donor has made similar gifts to two cousins in 2020 and 2021"
+  }
+}

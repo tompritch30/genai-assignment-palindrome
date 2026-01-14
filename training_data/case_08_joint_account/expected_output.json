@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "case_id": "case_08_joint_account",
+    "case_name": "Joint Account - Multiple Holders with Different Sources",
+    "complexity": "complex",
+    "account_holder": {
+      "name": "Michael Thompson and Sarah Thompson",
+      "type": "joint",
+      "holders": [
+        { "name": "Michael Thompson", "role": "Primary holder" },
+        { "name": "Sarah Thompson", "role": "Joint holder" }
+      ]
+    },
+    "total_stated_net_worth": 1500000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "attributed_to": "Michael Thompson",
+      "description": "NHS Consultant Cardiologist position",
+      "extracted_fields": {
+        "employer_name": "St Thomas' Hospital NHS Trust",
+        "job_title": "Consultant Cardiologist",
+        "employment_start_date": "September 2012",
+        "employment_end_date": "Present",
+        "annual_compensation": "£128,000",
+        "country_of_employment": "United Kingdom"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "business_income",
+      "source_id": "SOW_002",
+      "attributed_to": "Michael Thompson",
+      "description": "Private practice income",
+      "extracted_fields": {
+        "business_name": "London Heart Clinic",
+        "nature_of_business": "Private medical practice (cardiology)",
+        "ownership_percentage": null,
+        "annual_income_from_business": "£80,000",
+        "ownership_start_date": null,
+        "how_business_acquired": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "ownership_percentage",
+          "reason": "Not stated - unclear if owner, partner, or employed consultant"
+        },
+        {
+          "field_name": "ownership_start_date",
+          "reason": "Duration of private practice involvement not provided"
+        },
+        {
+          "field_name": "how_business_acquired",
+          "reason": "Nature of relationship with clinic not clarified"
+        }
+      ],
+      "completeness_score": 0.50,
+      "notes": "Unclear whether this is business ownership income or employment at private clinic. Requires clarification."
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_003",
+      "attributed_to": "Sarah Thompson",
+      "description": "Inheritance from father's estate",
+      "extracted_fields": {
+        "deceased_name": "George Mitchell (father)",
+        "relationship_to_deceased": "Father",
+        "date_of_death": "December 2021",
+        "amount_inherited": "£420,000",
+        "nature_of_inherited_assets": "Cash and investments from sale of property holdings (one-third share of estate)",
+        "original_source_of_deceased_wealth": "Successful property developer in the North West of England"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_004",
+      "attributed_to": "Joint (Michael and Sarah Thompson)",
+      "description": "Sale of previous family home",
+      "extracted_fields": {
+        "property_address": "28 Maple Drive, Sevenoaks, Kent",
+        "property_type": "Residential - Family home",
+        "original_acquisition_method": "Purchased jointly",
+        "original_acquisition_date": "2014",
+        "original_purchase_price": "£650,000",
+        "sale_date": "November 2023",
+        "sale_proceeds": "£620,000 (net after mortgage repayment and costs; gross £925,000)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 4,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.88,
+    "wealth_by_holder": {
+      "Michael Thompson": {
+        "primary_sources": ["NHS Employment (SOW_001)", "Private Practice (SOW_002)"],
+        "annual_income": "~£208,000"
+      },
+      "Sarah Thompson": {
+        "primary_sources": ["Inheritance (SOW_003)"],
+        "one_time_receipts": "£420,000"
+      },
+      "Joint": {
+        "sources": ["Property Sale (SOW_004)"],
+        "one_time_receipts": "£620,000"
+      }
+    },
+    "notes": "Well-documented joint case. Main gap is clarification needed on Michael's private practice arrangement (ownership vs employment)."
+  },
+  "recommended_follow_up_questions": [
+    "Is Michael an owner/partner at London Heart Clinic, or employed as a consultant?",
+    "When did Michael start working with London Heart Clinic?",
+    "What is Michael's employment history prior to becoming a consultant in 2012?"
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "case_id": "case_15_business_earnout",
+    "case_name": "Business Sale with Earnout Structure (Partial Payment)",
+    "complexity": "edge_case",
+    "account_holder": {
+      "name": "Jennifer Clarke",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 2460000,
+    "currency": "GBP",
+    "wealth_status": {
+      "realised": 2460000,
+      "contingent_unrealised": 550000,
+      "notes": "Additional £550,000 earnout expected July 2024 but not yet confirmed"
+    }
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "sale_of_business",
+      "source_id": "SOW_001",
+      "description": "Sale of DataSync Solutions Ltd - Upfront Payment",
+      "extracted_fields": {
+        "business_name": "DataSync Solutions Ltd",
+        "nature_of_business": "Data analytics software company",
+        "ownership_percentage_sold": "55%",
+        "sale_date": "July 2022",
+        "sale_proceeds": "£1,760,000 (55% of £3.2M upfront payment)",
+        "buyer_identity": "TechGiant Inc. (US-based technology firm)",
+        "how_business_originally_acquired": "Co-founded in 2011 with personal savings (£50,000) and £100,000 loan from parents"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "payment_structure": "Part of structured deal - see earnout components"
+    },
+    {
+      "source_type": "sale_of_business",
+      "source_id": "SOW_002",
+      "description": "Sale of DataSync Solutions Ltd - First Earnout Payment",
+      "extracted_fields": {
+        "business_name": "DataSync Solutions Ltd",
+        "nature_of_business": "Data analytics software company",
+        "ownership_percentage_sold": "55%",
+        "sale_date": "July 2023 (earnout milestone met)",
+        "sale_proceeds": "£550,000 (55% of first £1M earnout)",
+        "buyer_identity": "TechGiant Inc.",
+        "how_business_originally_acquired": "Same as SOW_001 - earnout component"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "payment_type": "Earnout - contingent on revenue targets"
+    },
+    {
+      "source_type": "sale_of_business",
+      "source_id": "SOW_003",
+      "description": "Sale of DataSync Solutions Ltd - Second Earnout Payment (PENDING)",
+      "extracted_fields": {
+        "business_name": "DataSync Solutions Ltd",
+        "nature_of_business": "Data analytics software company",
+        "ownership_percentage_sold": "55%",
+        "sale_date": "Expected July 2024",
+        "sale_proceeds": "Expected ~£550,000 (subject to performance targets)",
+        "buyer_identity": "TechGiant Inc.",
+        "how_business_originally_acquired": "Same as SOW_001 - earnout component"
+      },
+      "missing_fields": [
+        {
+          "field_name": "sale_proceeds",
+          "reason": "Amount contingent on performance targets - not yet confirmed",
+          "status": "PENDING"
+        },
+        {
+          "field_name": "sale_date",
+          "reason": "Expected July 2024 - not yet occurred",
+          "status": "FUTURE"
+        }
+      ],
+      "completeness_score": 0.67,
+      "payment_status": "UNREALISED - Contingent on performance targets being met"
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_004",
+      "description": "Retention bonus from post-acquisition consultancy",
+      "extracted_fields": {
+        "employer_name": "TechGiant Inc. (as consultant)",
+        "job_title": "Consultant (post-acquisition retention)",
+        "employment_start_date": "July 2022",
+        "employment_end_date": "January 2024 (18-month period)",
+        "annual_compensation": "£150,000 (retention bonus for completing period)",
+        "country_of_employment": "United Kingdom (assumed)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "notes": "One-time retention bonus, not ongoing salary"
+    },
+    {
+      "source_type": "gift",
+      "source_id": "SOW_005",
+      "description": "Original loan from parents (repaid) - Historical context",
+      "extracted_fields": {
+        "donor_name": "Parents (names not provided)",
+        "relationship_to_donor": "Parents",
+        "gift_date": "2011",
+        "gift_value": "£100,000 (loan, repaid in 2015)",
+        "donor_source_of_wealth": null,
+        "reason_for_gift": "Startup capital for DataSync Solutions Ltd"
+      },
+      "missing_fields": [
+        {
+          "field_name": "donor_name",
+          "reason": "Parents' names not provided"
+        },
+        {
+          "field_name": "donor_source_of_wealth",
+          "reason": "Not disclosed"
+        }
+      ],
+      "completeness_score": 0.67,
+      "notes": "Loan was repaid in 2015 - historical context only, not current source of wealth"
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 5,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 2,
+    "overall_completeness_score": 0.87,
+    "realised_vs_unrealised": {
+      "realised_wealth": {
+        "upfront_payment": "£1,760,000",
+        "first_earnout": "£550,000",
+        "retention_bonus": "£150,000",
+        "total_realised": "£2,460,000"
+      },
+      "unrealised_contingent": {
+        "second_earnout": "~£550,000 (expected July 2024, subject to targets)",
+        "status": "Not confirmed"
+      }
+    }
+  },
+  "deal_structure_summary": {
+    "total_deal_value": "£5,200,000 (if all earnouts achieved)",
+    "sellers_share": "55% = £2,860,000 + £150,000 retention",
+    "payment_timeline": [
+      { "date": "July 2022", "component": "Upfront", "amount": "£1,760,000", "status": "Received" },
+      { "date": "July 2023", "component": "Earnout 1", "amount": "£550,000", "status": "Received" },
+      { "date": "July 2024", "component": "Earnout 2", "amount": "~£550,000", "status": "Pending" },
+      { "date": "January 2024", "component": "Retention", "amount": "£150,000", "status": "Received" }
+    ]
+  },
+  "compliance_considerations": {
+    "earnout_treatment": "Second earnout should be treated as contingent/unrealised until confirmed",
+    "business_origin": "Clear chain: Personal savings + parent loan → Business founded → Business sold",
+    "parent_loan": "Was a loan (repaid 2015), not a gift - may still need parents' source of funds for completeness"
+  }
+}

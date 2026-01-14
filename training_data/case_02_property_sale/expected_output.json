@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "case_id": "case_02_property_sale",
+    "case_name": "Property Sale Only",
+    "complexity": "simple",
+    "account_holder": {
+      "name": "Catherine Moore",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 1450000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_001",
+      "description": "Sale of primary residence in Highgate",
+      "extracted_fields": {
+        "property_address": "47 Pemberton Gardens, Highgate, London N6 5PN",
+        "property_type": "Residential - Primary home (four-bedroom Victorian house)",
+        "original_acquisition_method": "Purchased with savings and mortgage",
+        "original_acquisition_date": "March 2005",
+        "original_purchase_price": "£485,000",
+        "sale_date": "September 2023",
+        "sale_proceeds": "£1,450,000 (net of fees and mortgage)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_002",
+      "description": "Career as barrister (mentioned as original source for property deposit)",
+      "extracted_fields": {
+        "employer_name": null,
+        "job_title": "Barrister",
+        "employment_start_date": null,
+        "employment_end_date": null,
+        "annual_compensation": null,
+        "country_of_employment": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "employer_name",
+          "reason": "Chambers or self-employed status not specified"
+        },
+        {
+          "field_name": "employment_start_date",
+          "reason": "Career duration not specified"
+        },
+        {
+          "field_name": "employment_end_date",
+          "reason": "Current employment status unknown"
+        },
+        {
+          "field_name": "annual_compensation",
+          "reason": "Income level not specified"
+        },
+        {
+          "field_name": "country_of_employment",
+          "reason": "Not explicitly stated"
+        }
+      ],
+      "completeness_score": 0.17,
+      "notes": "Employment mentioned only as context for original property purchase. May require follow-up if employment income is material to current wealth."
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 2,
+    "fully_complete_sources": 1,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.58,
+    "notes": "Property sale is fully documented. Employment history mentioned but not elaborated - follow-up may be needed if current employment income is relevant."
+  }
+}

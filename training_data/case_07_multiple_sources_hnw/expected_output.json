@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "case_id": "case_07_multiple_sources_hnw",
+    "case_name": "High Net Worth - Multiple Complex Sources",
+    "complexity": "complex",
+    "account_holder": {
+      "name": "Sir William Ashworth",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 18000000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "32-year career at Goldman Sachs",
+      "extracted_fields": {
+        "employer_name": "Goldman Sachs",
+        "job_title": "Managing Director, Investment Banking Division",
+        "employment_start_date": "1985 (joined as Associate)",
+        "employment_end_date": "December 2017",
+        "annual_compensation": "~£1,200,000 in final years; £15,000,000+ total career earnings",
+        "country_of_employment": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "country_of_employment",
+          "reason": "Not explicitly stated, likely UK or US"
+        }
+      ],
+      "completeness_score": 0.83
+    },
+    {
+      "source_type": "sale_of_business",
+      "source_id": "SOW_002",
+      "description": "Sale of Ashworth Capital Partners LLP",
+      "extracted_fields": {
+        "business_name": "Ashworth Capital Partners LLP",
+        "nature_of_business": "Fintech advisory firm",
+        "ownership_percentage_sold": "40%",
+        "sale_date": "September 2022",
+        "sale_proceeds": "£3,200,000 (personal share of £8M total)",
+        "buyer_identity": "A larger wealth management company",
+        "how_business_originally_acquired": "Co-founded in 2019 with two former colleagues after retiring from Goldman Sachs"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_003",
+      "description": "Inheritance from father (Lord Ashworth)",
+      "extracted_fields": {
+        "deceased_name": "Lord Ashworth (father)",
+        "relationship_to_deceased": "Father",
+        "date_of_death": "July 2020",
+        "amount_inherited": "£2,100,000",
+        "nature_of_inherited_assets": "Investment portfolios and proceeds from sale of family estate in Wiltshire",
+        "original_source_of_deceased_wealth": "Historical family landholdings and career as QC (Queen's Counsel)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_004",
+      "description": "Sale of family home in Kensington",
+      "extracted_fields": {
+        "property_address": "Kensington, London",
+        "property_type": "Residential - Former family home",
+        "original_acquisition_method": "Purchased",
+        "original_acquisition_date": "1998",
+        "original_purchase_price": "£1,100,000",
+        "sale_date": "March 2021",
+        "sale_proceeds": "£4,800,000"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_005",
+      "description": "Sale of holiday home in Cotswolds",
+      "extracted_fields": {
+        "property_address": "Cotswolds",
+        "property_type": "Holiday home",
+        "original_acquisition_method": "Purchased",
+        "original_acquisition_date": "2005",
+        "original_purchase_price": "£650,000",
+        "sale_date": "August 2022",
+        "sale_proceeds": "£1,600,000"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_006",
+      "description": "Sale of Monaco apartment",
+      "extracted_fields": {
+        "property_address": "Monaco",
+        "property_type": "Apartment",
+        "original_acquisition_method": null,
+        "original_acquisition_date": null,
+        "original_purchase_price": null,
+        "sale_date": "January 2023",
+        "sale_proceeds": "€2,200,000 (~£1,900,000)"
+      },
+      "missing_fields": [
+        {
+          "field_name": "original_acquisition_method",
+          "reason": "Not stated how property was acquired"
+        },
+        {
+          "field_name": "original_acquisition_date",
+          "reason": "Purchase date not provided"
+        },
+        {
+          "field_name": "original_purchase_price",
+          "reason": "Original cost not disclosed"
+        }
+      ],
+      "completeness_score": 0.57
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 6,
+    "fully_complete_sources": 4,
+    "sources_with_missing_fields": 2,
+    "overall_completeness_score": 0.90,
+    "wealth_reconciliation": {
+      "employment_career_earnings": "£15,000,000+",
+      "business_sale": "£3,200,000",
+      "inheritance": "£2,100,000",
+      "property_sales_total": "£8,300,000 (Kensington £4.8M + Cotswolds £1.6M + Monaco £1.9M)",
+      "stated_current_wealth": "£18,000,000",
+      "notes": "Total sources significantly exceed current wealth, accounting for taxes, living expenses, and spending over 40-year period"
+    }
+  },
+  "notes": "Comprehensive HNW case with multiple legitimate sources. Minor gaps in Monaco property details and Goldman Sachs location. Overall well-documented."
+}

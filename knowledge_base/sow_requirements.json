@@ -1,0 +1,327 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Knowledge base defining required fields for each Source of Wealth type",
+    "usage": "Use this to validate completeness of extracted SOW information and identify missing fields"
+  },
+  "source_of_wealth_types": {
+    "employment_income": {
+      "display_name": "Employment Income",
+      "description": "Income derived from salaried or contracted employment",
+      "required_fields": {
+        "employer_name": {
+          "description": "Name of the employing organization",
+          "examples": ["Barclays PLC", "NHS Trust", "Self-employed as Consultant"]
+        },
+        "job_title": {
+          "description": "Official job title or role",
+          "examples": ["Chief Financial Officer", "Senior Software Engineer", "Managing Director"]
+        },
+        "employment_start_date": {
+          "description": "When employment began (month/year minimum)",
+          "examples": ["March 2015", "2010", "Q1 2018"]
+        },
+        "employment_end_date": {
+          "description": "When employment ended, or 'Present' if ongoing",
+          "examples": ["December 2023", "Present", "2022"]
+        },
+        "annual_compensation": {
+          "description": "Annual salary/package value in GBP",
+          "examples": ["£150,000", "£85,000 base + £30,000 bonus", "£250,000 total package"]
+        },
+        "country_of_employment": {
+          "description": "Country where employment is/was based",
+          "examples": ["United Kingdom", "United States", "UAE"]
+        }
+      }
+    },
+    "business_income": {
+      "display_name": "Business Income",
+      "description": "Ongoing income from ownership/operation of a business",
+      "required_fields": {
+        "business_name": {
+          "description": "Legal name of the business",
+          "examples": ["ABC Trading Ltd", "Smith & Partners LLP", "TechStart Holdings"]
+        },
+        "nature_of_business": {
+          "description": "Industry sector and primary business activity",
+          "examples": ["Financial consulting services", "Retail clothing", "Software development"]
+        },
+        "ownership_percentage": {
+          "description": "Percentage ownership stake",
+          "examples": ["100%", "51%", "33.3%"]
+        },
+        "annual_income_from_business": {
+          "description": "Annual income drawn from the business",
+          "examples": ["£200,000", "£50,000 - £80,000 variable", "£500,000"]
+        },
+        "ownership_start_date": {
+          "description": "When ownership/involvement began",
+          "examples": ["Founded in 2005", "Acquired stake in 2018", "Partner since 2010"]
+        },
+        "how_business_acquired": {
+          "description": "How the business ownership was obtained",
+          "examples": ["Founded by the individual", "Inherited from father", "Purchased from previous owner"]
+        }
+      }
+    },
+    "business_dividends": {
+      "display_name": "Business Dividends",
+      "description": "Dividend income from shareholdings in a company",
+      "required_fields": {
+        "company_name": {
+          "description": "Name of the company paying dividends",
+          "examples": ["XYZ Holdings Ltd", "Family Investment Company", "Tech Ventures PLC"]
+        },
+        "shareholding_percentage": {
+          "description": "Percentage of shares held",
+          "examples": ["25%", "100%", "15%"]
+        },
+        "dividend_amount": {
+          "description": "Amount of dividends received",
+          "examples": ["£100,000 annually", "£50,000 in 2023", "Variable - approx £30,000/year"]
+        },
+        "period_received": {
+          "description": "Time period during which dividends were received",
+          "examples": ["2018-Present", "2020-2022", "Annually since 2015"]
+        },
+        "how_shares_acquired": {
+          "description": "Method of acquiring the shares",
+          "examples": ["Founded the company", "Inherited from mother", "Purchased in 2010 for £50,000"]
+        }
+      }
+    },
+    "sale_of_business": {
+      "display_name": "Sale of Business",
+      "description": "Proceeds from selling a business or business interest",
+      "required_fields": {
+        "business_name": {
+          "description": "Name of the business sold",
+          "examples": ["ABC Manufacturing Ltd", "Smith Consulting Group", "TechStart Ltd"]
+        },
+        "nature_of_business": {
+          "description": "Industry sector and primary business activity",
+          "examples": ["Manufacturing automotive parts", "IT consulting", "E-commerce retail"]
+        },
+        "ownership_percentage_sold": {
+          "description": "Percentage of business that was sold",
+          "examples": ["100%", "51%", "25% stake"]
+        },
+        "sale_date": {
+          "description": "Date of the sale transaction",
+          "examples": ["March 2022", "2021", "Q4 2020"]
+        },
+        "sale_proceeds": {
+          "description": "Net proceeds received from the sale",
+          "examples": ["£2,500,000", "£750,000 after costs", "£5,000,000"]
+        },
+        "buyer_identity": {
+          "description": "Who purchased the business",
+          "examples": ["Private equity firm", "Trade buyer - Competitor Ltd", "Management buyout"]
+        },
+        "how_business_originally_acquired": {
+          "description": "How the seller originally came to own the business",
+          "examples": ["Founded in 1995", "Inherited from uncle in 2010", "Purchased in 2005 for £100,000"]
+        }
+      }
+    },
+    "sale_of_asset": {
+      "display_name": "Sale of Asset",
+      "description": "Proceeds from selling non-property assets (investments, vehicles, collectibles, etc.)",
+      "required_fields": {
+        "asset_description": {
+          "description": "Description of the asset sold",
+          "examples": ["Share portfolio", "Classic car collection", "Art collection", "Cryptocurrency holdings"]
+        },
+        "original_acquisition_method": {
+          "description": "How the asset was originally acquired",
+          "examples": ["Purchased over 10 years", "Inherited from grandmother", "Received as bonus"]
+        },
+        "original_acquisition_date": {
+          "description": "When the asset was originally acquired",
+          "examples": ["Various dates 2010-2020", "Inherited in 2015", "Purchased in 2018"]
+        },
+        "sale_date": {
+          "description": "Date of the sale",
+          "examples": ["June 2023", "Throughout 2022", "March 2021"]
+        },
+        "sale_proceeds": {
+          "description": "Amount received from the sale",
+          "examples": ["£500,000", "£1,200,000", "£85,000"]
+        },
+        "buyer_identity": {
+          "description": "Who purchased the asset (if known/relevant)",
+          "examples": ["Sold via auction house", "Private collector", "Sold on exchange"]
+        }
+      }
+    },
+    "sale_of_property": {
+      "display_name": "Sale of Property",
+      "description": "Proceeds from selling real estate/property",
+      "required_fields": {
+        "property_address": {
+          "description": "Address or location of the property",
+          "examples": ["123 High Street, London SW1", "Villa in Marbella, Spain", "Commercial unit, Manchester"]
+        },
+        "property_type": {
+          "description": "Type of property",
+          "examples": ["Residential - Primary home", "Buy-to-let investment", "Commercial office", "Holiday home"]
+        },
+        "original_acquisition_method": {
+          "description": "How the property was originally acquired",
+          "examples": ["Purchased", "Inherited from parents", "Received as gift"]
+        },
+        "original_acquisition_date": {
+          "description": "When the property was acquired",
+          "examples": ["Purchased in 2005", "Inherited in 2018", "Built in 2010"]
+        },
+        "original_purchase_price": {
+          "description": "Original acquisition cost (if purchased)",
+          "examples": ["£350,000", "Inherited - no cost basis", "£1,200,000"]
+        },
+        "sale_date": {
+          "description": "Date of the property sale",
+          "examples": ["August 2023", "2022", "Q2 2021"]
+        },
+        "sale_proceeds": {
+          "description": "Net proceeds from the sale",
+          "examples": ["£850,000", "£2,100,000 after fees", "£450,000"]
+        }
+      }
+    },
+    "inheritance": {
+      "display_name": "Inheritance",
+      "description": "Assets or funds received from a deceased person's estate",
+      "required_fields": {
+        "deceased_name": {
+          "description": "Name of the deceased person",
+          "examples": ["John Smith (father)", "Margaret Williams", "Robert Brown"]
+        },
+        "relationship_to_deceased": {
+          "description": "Relationship between beneficiary and deceased",
+          "examples": ["Father", "Grandmother", "Aunt", "Spouse"]
+        },
+        "date_of_death": {
+          "description": "When the deceased passed away",
+          "examples": ["March 2020", "2019", "December 2018"]
+        },
+        "amount_inherited": {
+          "description": "Total value inherited",
+          "examples": ["£500,000", "£1,200,000 in assets", "Share of £2M estate"]
+        },
+        "nature_of_inherited_assets": {
+          "description": "What form the inheritance took",
+          "examples": ["Cash and investments", "Property at 123 High St", "Business shares", "Mixed portfolio"]
+        },
+        "original_source_of_deceased_wealth": {
+          "description": "How the deceased accumulated the wealth being inherited",
+          "examples": ["Deceased was a successful surgeon", "Deceased's business sale in 2010", "Family wealth through generations"]
+        }
+      }
+    },
+    "gift": {
+      "display_name": "Gift",
+      "description": "Assets or funds received as a gift from a living person",
+      "required_fields": {
+        "donor_name": {
+          "description": "Name of the person giving the gift",
+          "examples": ["William Jones (grandfather)", "Sarah Smith (mother)", "Uncle James"]
+        },
+        "relationship_to_donor": {
+          "description": "Relationship between recipient and donor",
+          "examples": ["Grandfather", "Parent", "Sibling", "Family friend"]
+        },
+        "gift_date": {
+          "description": "When the gift was given",
+          "examples": ["December 2022", "2020", "Christmas 2021"]
+        },
+        "gift_value": {
+          "description": "Value of the gift",
+          "examples": ["£100,000", "£500,000", "£50,000"]
+        },
+        "donor_source_of_wealth": {
+          "description": "How the donor accumulated the funds being gifted",
+          "examples": ["Donor's pension savings", "Donor's business sale", "Donor inherited from their parents"]
+        },
+        "reason_for_gift": {
+          "description": "Purpose or occasion for the gift",
+          "examples": ["Wedding gift", "Help with house deposit", "Early inheritance", "No specific occasion"]
+        }
+      }
+    },
+    "divorce_settlement": {
+      "display_name": "Divorce Settlement",
+      "description": "Assets or funds received as part of a divorce settlement",
+      "required_fields": {
+        "former_spouse_name": {
+          "description": "Name of the former spouse",
+          "examples": ["Jane Smith", "Michael Brown", "Sarah Williams"]
+        },
+        "settlement_date": {
+          "description": "When the divorce was finalized/settlement received",
+          "examples": ["July 2021", "2020", "March 2019"]
+        },
+        "settlement_amount": {
+          "description": "Value of settlement received",
+          "examples": ["£750,000", "£1,500,000 in assets", "50% of £2M estate"]
+        },
+        "court_jurisdiction": {
+          "description": "Where the divorce was legally processed",
+          "examples": ["England and Wales", "Scotland", "California, USA"]
+        },
+        "duration_of_marriage": {
+          "description": "How long the marriage lasted",
+          "examples": ["15 years", "2005-2020", "8 years"]
+        }
+      }
+    },
+    "lottery_winnings": {
+      "display_name": "Lottery Winnings",
+      "description": "Funds received from winning a lottery or similar prize draw",
+      "required_fields": {
+        "lottery_name": {
+          "description": "Name of the lottery or prize draw",
+          "examples": ["National Lottery", "EuroMillions", "Premium Bonds", "Postcode Lottery"]
+        },
+        "win_date": {
+          "description": "Date of the winning",
+          "examples": ["January 2023", "2022", "March 2021"]
+        },
+        "gross_amount_won": {
+          "description": "Total amount won before any deductions",
+          "examples": ["£500,000", "£1,000,000", "£50,000"]
+        },
+        "country_of_win": {
+          "description": "Country where the lottery was held",
+          "examples": ["United Kingdom", "Spain", "Ireland"]
+        }
+      }
+    },
+    "insurance_payout": {
+      "display_name": "Insurance Payout",
+      "description": "Funds received from an insurance claim",
+      "required_fields": {
+        "insurance_provider": {
+          "description": "Name of the insurance company",
+          "examples": ["Aviva", "Legal & General", "AXA", "Prudential"]
+        },
+        "policy_type": {
+          "description": "Type of insurance policy",
+          "examples": ["Life insurance", "Critical illness", "Income protection", "Property insurance"]
+        },
+        "claim_event_description": {
+          "description": "What triggered the insurance claim",
+          "examples": ["Death of spouse", "Critical illness diagnosis", "Property damage", "Redundancy"]
+        },
+        "payout_date": {
+          "description": "When the payout was received",
+          "examples": ["October 2022", "2021", "June 2020"]
+        },
+        "payout_amount": {
+          "description": "Amount received from insurance",
+          "examples": ["£250,000", "£500,000", "£100,000"]
+        }
+      }
+    }
+  }
+}

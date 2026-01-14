@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "case_id": "case_05_business_income_dividends",
+    "case_name": "Business Income + Business Dividends (Same Entity)",
+    "complexity": "medium",
+    "account_holder": {
+      "name": "Robert Fitzgerald",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 2500000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "business_income",
+      "source_id": "SOW_001",
+      "description": "Director's salary from Fitzgerald Engineering Solutions Ltd",
+      "extracted_fields": {
+        "business_name": "Fitzgerald Engineering Solutions Ltd",
+        "nature_of_business": "Structural engineering consultancy",
+        "ownership_percentage": "100%",
+        "annual_income_from_business": "£85,000 (director's salary)",
+        "ownership_start_date": "September 2008 (founded)",
+        "how_business_acquired": "Founded by the individual after leaving Arup"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "business_dividends",
+      "source_id": "SOW_002",
+      "description": "Dividend income from Fitzgerald Engineering Solutions Ltd",
+      "extracted_fields": {
+        "company_name": "Fitzgerald Engineering Solutions Ltd",
+        "shareholding_percentage": "100%",
+        "dividend_amount": "£150,000 - £300,000 annually (£275,000 in 2022-23)",
+        "period_received": "Ongoing since founding; last 5 years specifically mentioned",
+        "how_shares_acquired": "Founded the company"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_003",
+      "description": "Previous employment at Arup (prior to founding business)",
+      "extracted_fields": {
+        "employer_name": "Arup",
+        "job_title": null,
+        "employment_start_date": null,
+        "employment_end_date": "Before September 2008",
+        "annual_compensation": null,
+        "country_of_employment": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "job_title",
+          "reason": "Role at Arup not specified"
+        },
+        {
+          "field_name": "employment_start_date",
+          "reason": "Duration at Arup not provided"
+        },
+        {
+          "field_name": "annual_compensation",
+          "reason": "Salary at Arup not disclosed"
+        },
+        {
+          "field_name": "country_of_employment",
+          "reason": "Location not specified"
+        }
+      ],
+      "completeness_score": 0.33,
+      "notes": "Previous employment is mentioned as context for founding the business but details are sparse. May not be material if initial capital for business was minimal."
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.78,
+    "notes": "Primary sources (business income and dividends) are well documented. Note: These two sources derive from the same underlying entity - total annual income is approximately £360,000 combined. Previous employment details at Arup are incomplete but may be immaterial."
+  },
+  "deduplication_note": "SOW_001 and SOW_002 both relate to Fitzgerald Engineering Solutions Ltd. While technically different income types (salary vs dividends), they share a common source entity. Combined annual income: ~£360,000."
+}

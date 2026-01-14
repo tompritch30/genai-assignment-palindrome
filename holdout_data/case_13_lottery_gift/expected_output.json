@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "case_id": "case_13_lottery_gift",
+    "case_name": "Gift from Lottery Winner (Parent to Child)",
+    "complexity": "edge_case",
+    "account_holder": {
+      "name": "Lisa Morgan",
+      "type": "individual"
+    },
+    "total_stated_net_worth": 500000,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "gift",
+      "source_id": "SOW_001",
+      "description": "Gift from father (lottery winner)",
+      "extracted_fields": {
+        "donor_name": "Brian Morgan (father)",
+        "relationship_to_donor": "Father",
+        "gift_date": "March 2022",
+        "gift_value": "£500,000",
+        "donor_source_of_wealth": "EuroMillions lottery win of £2.4 million in November 2021",
+        "reason_for_gift": "Sharing lottery winnings with family members"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "donor_wealth_chain": {
+        "type": "lottery_winnings",
+        "lottery_name": "EuroMillions",
+        "win_date": "November 2021",
+        "gross_amount_won": "£2,400,000",
+        "country_of_win": "United Kingdom",
+        "verification": "Verified by Camelot; reported in local newspaper"
+      }
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_002",
+      "description": "Employment as primary school teacher",
+      "extracted_fields": {
+        "employer_name": null,
+        "job_title": "Primary School Teacher",
+        "employment_start_date": null,
+        "employment_end_date": "Present",
+        "annual_compensation": "£35,000",
+        "country_of_employment": "United Kingdom (Coventry)"
+      },
+      "missing_fields": [
+        {
+          "field_name": "employer_name",
+          "reason": "School name not provided"
+        },
+        {
+          "field_name": "employment_start_date",
+          "reason": "Duration of employment not specified"
+        }
+      ],
+      "completeness_score": 0.67,
+      "notes": "Employment income explicitly stated as NOT the main source of investable funds"
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 2,
+    "fully_complete_sources": 1,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.83,
+    "primary_wealth_source": "Gift from lottery-winning father",
+    "notes": "Clear chain: Lottery win → Gift to child. Well-documented with gift letter and bank statements mentioned."
+  },
+  "supporting_documentation_mentioned": [
+    "Signed gift letter from father",
+    "Bank statements showing transfer from father's account (lottery recipient) to account holder",
+    "Local newspaper report of lottery win"
+  ],
+  "source_chain_analysis": {
+    "origin": {
+      "type": "lottery_winnings",
+      "recipient": "Brian Morgan (father/donor)",
+      "amount": "£2,400,000",
+      "date": "November 2021",
+      "verified_by": "Camelot"
+    },
+    "transfer": {
+      "type": "gift",
+      "from": "Brian Morgan",
+      "to": "Lisa Morgan",
+      "amount": "£500,000",
+      "date": "March 2022"
+    },
+    "pattern": "Father made similar gifts to two other children (brother and sister)"
+  },
+  "compliance_considerations": {
+    "gift_verification": "Gift letter and bank statements available",
+    "lottery_verification": "Camelot verification and newspaper report provide independent confirmation",
+    "inheritance_tax": "Gift within 7-year IHT rule period - may be relevant if donor dies before March 2029"
+  }
+}

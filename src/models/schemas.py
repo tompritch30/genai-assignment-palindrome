@@ -1,6 +1,6 @@
 """Pydantic models for SOW extraction output schema."""
 
-from enum import Enum
+from enum import Enum, StrEnum
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,22 @@ class AccountType(str, Enum):
 
     INDIVIDUAL = "individual"
     JOINT = "joint"
+
+
+class SourceType(StrEnum):
+    """Source of wealth types."""
+
+    EMPLOYMENT_INCOME = "employment_income"
+    SALE_OF_PROPERTY = "sale_of_property"
+    BUSINESS_INCOME = "business_income"
+    BUSINESS_DIVIDENDS = "business_dividends"
+    SALE_OF_BUSINESS = "sale_of_business"
+    SALE_OF_ASSET = "sale_of_asset"
+    INHERITANCE = "inheritance"
+    GIFT = "gift"
+    DIVORCE_SETTLEMENT = "divorce_settlement"
+    LOTTERY_WINNINGS = "lottery_winnings"
+    INSURANCE_PAYOUT = "insurance_payout"
 
 
 class AccountHolder(BaseModel):
@@ -40,6 +56,15 @@ class FieldStatus(str, Enum):
     POPULATED = "populated"
     NOT_STATED = "not_stated"
     NOT_APPLICABLE = "not_applicable"
+
+
+class PaymentStatus(str, Enum):
+    """Status of a payment for unrealized/contingent payments."""
+
+    REALISED = "REALISED"  # Payment received
+    UNREALISED = "UNREALISED"  # Payment expected but not yet received
+    PENDING = "PENDING"  # Payment subject to conditions
+    HISTORICAL = "HISTORICAL"  # Historical context, not current source
 
 
 # ============================================================================
@@ -290,7 +315,7 @@ class SourceChain(BaseModel):
 class SourceOfWealth(BaseModel):
     """Base model for a Source of Wealth entry."""
 
-    source_type: str = Field(..., description="Type of source (from 11 types)")
+    source_type: SourceType = Field(..., description="Type of source (from 11 types)")
     source_id: str = Field(..., description="Unique identifier (e.g., SOW_001)")
     description: str = Field(
         ..., description="Human-readable description of this source"
@@ -310,6 +335,13 @@ class SourceOfWealth(BaseModel):
     notes: str | None = Field(None, description="Additional notes about this source")
     compliance_flags: list[str] | None = Field(
         None, description="Compliance concerns or ambiguities"
+    )
+    payment_status: str | None = Field(
+        None,
+        description="For unrealized/contingent payments: REALISED, UNREALISED, PENDING, or HISTORICAL",
+    )
+    overlapping_sources: list[str] | None = Field(
+        None, description="Other source IDs that relate to the same event"
     )
     donor_wealth_chain: DonorWealthChain | None = Field(
         None, description="For gifts: donor's source of wealth chain"

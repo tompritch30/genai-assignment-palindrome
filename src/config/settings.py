@@ -1,17 +1,10 @@
 """Configuration settings loaded from environment variables."""
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore",
-    )
+    """Agent different settings and configs - openai key is exported."""
 
     # Model Selection (reasoning-first approach)
     orchestrator_model: str = "openai:o3-mini"

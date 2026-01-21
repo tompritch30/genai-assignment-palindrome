@@ -11,6 +11,7 @@ import pytest
 
 from src.agents.orchestrator import Orchestrator
 from src.loaders.document_loader import DocumentLoader
+from src.models.schemas import SourceType
 
 
 @pytest.mark.asyncio
@@ -113,10 +114,14 @@ async def test_case_05_same_entity_different_types():
 
     # Should have both business_income and business_dividends
     business_income = [
-        s for s in result.sources_of_wealth if s.source_type == "business_income"
+        s
+        for s in result.sources_of_wealth
+        if s.source_type == SourceType.BUSINESS_INCOME
     ]
     business_dividends = [
-        s for s in result.sources_of_wealth if s.source_type == "business_dividends"
+        s
+        for s in result.sources_of_wealth
+        if s.source_type == SourceType.BUSINESS_DIVIDENDS
     ]
 
     assert len(business_income) > 0, "Should find business income source"
@@ -142,7 +147,9 @@ async def test_case_07_multiple_properties():
 
     # Should have multiple property sales
     property_sales = [
-        s for s in result.sources_of_wealth if s.source_type == "sale_of_property"
+        s
+        for s in result.sources_of_wealth
+        if s.source_type == SourceType.SALE_OF_PROPERTY
     ]
     assert len(property_sales) >= 2, "Should find multiple property sales"
 

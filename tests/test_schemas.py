@@ -14,6 +14,7 @@ from src.models.schemas import (
     ExtractionSummary,
     MissingField,
     SourceOfWealth,
+    SourceType,
 )
 
 
@@ -68,13 +69,13 @@ class TestSourceOfWealth:
     def test_source_of_wealth_basic(self):
         """Test basic source of wealth entry."""
         source = SourceOfWealth(
-            source_type="employment_income",
+            source_type=SourceType.EMPLOYMENT_INCOME,
             source_id="SOW_001",
             description="Current employment",
             extracted_fields={"employer_name": "Acme Corp", "job_title": "Engineer"},
             completeness_score=0.8,
         )
-        assert source.source_type == "employment_income"
+        assert source.source_type == SourceType.EMPLOYMENT_INCOME
         assert source.source_id == "SOW_001"
         assert source.completeness_score == 0.8
         assert len(source.missing_fields) == 0
@@ -85,7 +86,7 @@ class TestSourceOfWealth:
             field_name="country_of_employment", reason="Not explicitly stated"
         )
         source = SourceOfWealth(
-            source_type="employment_income",
+            source_type=SourceType.EMPLOYMENT_INCOME,
             source_id="SOW_001",
             description="Previous employment",
             extracted_fields={"employer_name": "Old Corp"},
@@ -99,7 +100,7 @@ class TestSourceOfWealth:
         """Test completeness score must be between 0 and 1."""
         # Valid score
         source = SourceOfWealth(
-            source_type="employment_income",
+            source_type=SourceType.EMPLOYMENT_INCOME,
             source_id="SOW_001",
             description="Test",
             extracted_fields={},
@@ -161,7 +162,7 @@ class TestExtractionResult:
         )
 
         source = SourceOfWealth(
-            source_type="employment_income",
+            source_type=SourceType.EMPLOYMENT_INCOME,
             source_id="SOW_001",
             description="Current employment",
             extracted_fields={"employer_name": "Acme Corp"},

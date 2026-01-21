@@ -28,10 +28,7 @@ async def test_openai_connection() -> None:
     logger.info(f"Using model: {model}")
 
     # Create agent with model settings
-    agent = Agent(
-        model=model,
-        retries=3,
-    )
+    agent = Agent(model=model, retries=3)
 
     result = await agent.run(
         "Say hello and confirm the connection is working. Return a message and status='success'.",

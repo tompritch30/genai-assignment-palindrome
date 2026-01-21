@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from src.agents.base import BaseExtractionAgent
+from src.agents.prompts import load_prompt
 from src.models.schemas import EmploymentIncomeFields
 from src.utils.logging_config import get_logger
 
@@ -17,31 +18,7 @@ class EmploymentIncomeAgent(BaseExtractionAgent):
 
     def __init__(self):
         """Initialize employment income extraction agent."""
-        instructions = """
-You are an employment income extraction specialist for KYC/AML compliance.
-
-Your task is to extract ALL employment mentioned in the client narrative, including:
-- Current employment
-- Historical/previous employment
-- Brief mentions (e.g., "career as a barrister", "worked in finance")
-
-CRITICAL RULES:
-1. Extract EXACTLY what is stated - do NOT infer, calculate, or guess
-2. If vague (e.g., "good salary", "bank in London"), capture the LITERAL text exactly as written
-3. Each distinct role/employer/period is a separate entry - do NOT merge them
-4. Return empty list if no employment mentioned at all
-5. Set fields to null if not stated (don't guess or infer)
-6. Do NOT create entries where ALL fields are null - only include entries with at least one field populated
-7. If only partial information is given (e.g., just "barrister" with no employer), create an entry ONLY if at least one field has a value
-
-EXAMPLES:
-- "I work at Acme Corp as an Engineer" → employer_name="Acme Corp", job_title="Engineer"
-- "I've worked in finance for 20 years" → employer_name=null, job_title=null (not enough detail)
-- "career as a barrister" → job_title="barrister", employer_name=null
-- "good salary" → annual_compensation="good salary" (literal text, don't normalize)
-
-Return a list of EmploymentIncomeFields objects, one for each employment instance found.
-"""
+        instructions = load_prompt("employment_income.txt")
         super().__init__(
             model=None,  # Use default extraction_model (gpt-4o)
             result_type=list[EmploymentIncomeFields],

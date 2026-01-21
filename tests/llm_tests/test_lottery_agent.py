@@ -31,7 +31,8 @@ def load_expected_output(case_dir: Path) -> dict:
 def get_lottery_sources(expected: dict) -> list[dict]:
     """Extract lottery winnings sources from expected output."""
     return [
-        s for s in expected["sources_of_wealth"]
+        s
+        for s in expected["sources_of_wealth"]
         if s["source_type"] == "lottery_winnings"
     ]
 
@@ -59,8 +60,12 @@ class TestLotteryWinningsAgentLLM:
 
         # If no direct lottery sources, that's OK - it's in the gift's donor chain
         if len(expected_sources) == 0:
-            assert len(results) == 0, "Expected no direct lottery sources (in donor chain)"
-            print("\nPASSED: No direct lottery sources (correctly in donor wealth chain)")
+            assert len(results) == 0, (
+                "Expected no direct lottery sources (in donor chain)"
+            )
+            print(
+                "\nPASSED: No direct lottery sources (correctly in donor wealth chain)"
+            )
             return
 
         assert len(results) == len(expected_sources), (
@@ -110,9 +115,7 @@ class TestLotteryWinningsAgentLLM:
                 )
 
             if failures:
-                all_failures.append(
-                    {"lottery": expected_lottery, "failures": failures}
-                )
+                all_failures.append({"lottery": expected_lottery, "failures": failures})
 
         # Summary
         print(f"\n{'=' * 70}")

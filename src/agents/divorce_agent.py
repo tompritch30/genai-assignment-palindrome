@@ -1,6 +1,7 @@
 """Divorce Settlement extraction agent."""
 
 from src.agents.base import BaseExtractionAgent
+from src.agents.prompts import load_prompt
 from src.models.schemas import DivorceSettlementFields
 from src.utils.logging_config import get_logger
 
@@ -12,32 +13,16 @@ class DivorceSettlementAgent(BaseExtractionAgent):
 
     def __init__(self):
         """Initialize divorce settlement extraction agent."""
-        instructions = """
-You are a divorce settlement extraction specialist for KYC/AML compliance.
-
-Extract ALL divorce settlements mentioned in the client narrative.
-
-CRITICAL RULES:
-1. Extract EXACTLY what is stated - do NOT infer or calculate
-2. If vague, capture the LITERAL text
-3. Each distinct settlement is a separate entry
-4. Return empty list if no divorce settlements mentioned
-5. Set fields to null if not stated
-6. Do NOT create entries where ALL fields are null
-
-For spouse_wealth_context: If mentioned, capture information about the former spouse's
-source of wealth that led to the settlement amount. This helps establish the legitimacy
-of the settlement amount.
-
-Return a list of DivorceSettlementFields objects, one for each divorce settlement found.
-"""
+        instructions = load_prompt("divorce_settlement.txt")
         super().__init__(
             model=None,
             result_type=list[DivorceSettlementFields],
             instructions=instructions,
         )
 
-    async def extract_divorce_settlements(self, narrative: str) -> list[DivorceSettlementFields]:
+    async def extract_divorce_settlements(
+        self, narrative: str
+    ) -> list[DivorceSettlementFields]:
         """Extract all divorce settlement sources from narrative.
 
         Args:
@@ -48,19 +33,22 @@ Return a list of DivorceSettlementFields objects, one for each divorce settlemen
         """
         logger.info("Extracting divorce settlement sources...")
         result = await self.extract(narrative)
-        
+
         # Filter out entries where all fields are None
         filtered = [
-            divorce for divorce in result
-            if any([
-                divorce.former_spouse_name,
-                divorce.settlement_date,
-                divorce.settlement_amount,
-                divorce.court_jurisdiction,
-                divorce.duration_of_marriage,
-            ])
+            divorce
+            for divorce in result
+            if any(
+                [
+                    divorce.former_spouse_name,
+                    divorce.settlement_date,
+                    divorce.settlement_amount,
+                    divorce.court_jurisdiction,
+                    divorce.duration_of_marriage,
+                ]
+            )
         ]
-        
+
         logger.info(f"Extracted {len(filtered)} divorce settlement source(s)")
         return filtered
 
@@ -79,7 +67,7 @@ if __name__ == "__main__":
         narrative = DocumentLoader.load_from_file(doc_path)
         agent = DivorceSettlementAgent()
         results = await agent.extract_divorce_settlements(narrative)
-        
+
         print(f"Found {len(results)} divorce settlement source(s):")
         for i, divorce in enumerate(results, 1):
             print(f"\n{i}.")

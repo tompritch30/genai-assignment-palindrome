@@ -1,6 +1,7 @@
 """Business Income extraction agent."""
 
 from src.agents.base import BaseExtractionAgent
+from src.agents.prompts import load_prompt
 from src.models.schemas import BusinessIncomeFields
 from src.utils.logging_config import get_logger
 
@@ -12,23 +13,7 @@ class BusinessIncomeAgent(BaseExtractionAgent):
 
     def __init__(self):
         """Initialize business income extraction agent."""
-        instructions = """
-You are a business income extraction specialist for KYC/AML compliance.
-
-Extract ALL business income mentioned in the narrative. This is ongoing income from owning/operating a business (salary, distributions, etc.).
-
-CRITICAL RULES:
-1. Extract EXACTLY what is stated - do NOT infer or calculate
-2. If vague, capture the LITERAL text
-3. Each distinct business is a separate entry
-4. Return empty list if no business income mentioned
-5. Set fields to null if not stated
-6. Do NOT create entries where ALL fields are null
-
-Note: Business income is different from business dividends. If same entity generates both, create separate entries.
-
-Return a list of BusinessIncomeFields objects, one for each business income source found.
-"""
+        instructions = load_prompt("business_income.txt")
         super().__init__(
             model=None,
             result_type=list[BusinessIncomeFields],

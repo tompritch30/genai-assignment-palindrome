@@ -1,6 +1,7 @@
 """Property Sale extraction agent."""
 
 from src.agents.base import BaseExtractionAgent
+from src.agents.prompts import load_prompt
 from src.models.schemas import SaleOfPropertyFields
 from src.utils.logging_config import get_logger
 
@@ -12,27 +13,7 @@ class PropertySaleAgent(BaseExtractionAgent):
 
     def __init__(self):
         """Initialize property sale extraction agent."""
-        instructions = """
-You are a property sale extraction specialist for KYC/AML compliance.
-
-Extract ALL property sales mentioned in the client narrative, including:
-- Residential properties (primary homes, buy-to-let, holiday homes)
-- Commercial properties
-- Properties sold in different jurisdictions
-
-CRITICAL RULES:
-1. Extract EXACTLY what is stated - do NOT infer, calculate, or guess
-2. If vague, capture the LITERAL text exactly as written
-3. Each distinct property sale is a separate entry
-4. Return empty list if no property sales mentioned
-5. Set fields to null if not stated (don't guess)
-6. Do NOT create entries where ALL fields are null
-
-For original_purchase_price: If property was inherited, this field is NOT APPLICABLE (not missing).
-For original_acquisition_method: Capture how property was acquired (Purchased, Inherited, Gift, etc.)
-
-Return a list of SaleOfPropertyFields objects, one for each property sale found.
-"""
+        instructions = load_prompt("property_sale.txt")
         super().__init__(
             model=None,
             result_type=list[SaleOfPropertyFields],

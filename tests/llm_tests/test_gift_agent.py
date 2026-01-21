@@ -30,10 +30,7 @@ def load_expected_output(case_dir: Path) -> dict:
 
 def get_gift_sources(expected: dict) -> list[dict]:
     """Extract gift sources from expected output."""
-    return [
-        s for s in expected["sources_of_wealth"]
-        if s["source_type"] == "gift"
-    ]
+    return [s for s in expected["sources_of_wealth"] if s["source_type"] == "gift"]
 
 
 @pytest.mark.asyncio
@@ -70,8 +67,7 @@ class TestGiftAgentLLM:
                 (
                     r
                     for r in results
-                    if r.donor_name
-                    and expected_donor.lower() in r.donor_name.lower()
+                    if r.donor_name and expected_donor.lower() in r.donor_name.lower()
                 ),
                 None,
             )

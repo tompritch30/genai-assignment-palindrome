@@ -31,7 +31,8 @@ def load_expected_output(case_dir: Path) -> dict:
 def get_insurance_sources(expected: dict) -> list[dict]:
     """Extract insurance payout sources from expected output."""
     return [
-        s for s in expected["sources_of_wealth"]
+        s
+        for s in expected["sources_of_wealth"]
         if s["source_type"] == "insurance_payout"
     ]
 

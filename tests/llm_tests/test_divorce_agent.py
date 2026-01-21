@@ -31,7 +31,8 @@ def load_expected_output(case_dir: Path) -> dict:
 def get_divorce_sources(expected: dict) -> list[dict]:
     """Extract divorce settlement sources from expected output."""
     return [
-        s for s in expected["sources_of_wealth"]
+        s
+        for s in expected["sources_of_wealth"]
         if s["source_type"] == "divorce_settlement"
     ]
 

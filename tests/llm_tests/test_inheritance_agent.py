@@ -31,8 +31,7 @@ def load_expected_output(case_dir: Path) -> dict:
 def get_inheritance_sources(expected: dict) -> list[dict]:
     """Extract inheritance sources from expected output."""
     return [
-        s for s in expected["sources_of_wealth"]
-        if s["source_type"] == "inheritance"
+        s for s in expected["sources_of_wealth"] if s["source_type"] == "inheritance"
     ]
 
 

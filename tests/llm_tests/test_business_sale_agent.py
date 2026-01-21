@@ -31,7 +31,8 @@ def load_expected_output(case_dir: Path) -> dict:
 def get_business_sale_sources(expected: dict) -> list[dict]:
     """Extract business sale sources from expected output."""
     return [
-        s for s in expected["sources_of_wealth"]
+        s
+        for s in expected["sources_of_wealth"]
         if s["source_type"] == "sale_of_business"
     ]
 
@@ -69,14 +70,25 @@ class TestSaleOfBusinessAgentLLM:
             # Find matching result by business name and description keywords
             matched = None
             for r in results:
-                if r.business_name and expected_business.lower() in r.business_name.lower():
+                if (
+                    r.business_name
+                    and expected_business.lower() in r.business_name.lower()
+                ):
                     # Try to match by payment type keywords
                     if "upfront" in expected_description.lower():
-                        if "upfront" in r.sale_proceeds.lower() if r.sale_proceeds else False:
+                        if (
+                            "upfront" in r.sale_proceeds.lower()
+                            if r.sale_proceeds
+                            else False
+                        ):
                             matched = r
                             break
                     elif "earnout" in expected_description.lower():
-                        if "earnout" in r.sale_proceeds.lower() if r.sale_proceeds else False:
+                        if (
+                            "earnout" in r.sale_proceeds.lower()
+                            if r.sale_proceeds
+                            else False
+                        ):
                             matched = r
                             break
                     else:

@@ -1,6 +1,7 @@
 """Business Dividends extraction agent."""
 
 from src.agents.base import BaseExtractionAgent
+from src.agents.prompts import load_prompt
 from src.models.schemas import BusinessDividendsFields
 from src.utils.logging_config import get_logger
 
@@ -12,24 +13,7 @@ class BusinessDividendsAgent(BaseExtractionAgent):
 
     def __init__(self):
         """Initialize business dividends extraction agent."""
-        instructions = """
-You are a business dividends extraction specialist for KYC/AML compliance.
-
-Extract ALL dividend income from shareholdings mentioned in the narrative.
-
-CRITICAL RULES:
-1. Extract EXACTLY what is stated - do NOT infer or calculate
-2. If vague, capture the LITERAL text
-3. Each distinct company/shareholding is a separate entry
-4. Return empty list if no dividends mentioned
-5. Set fields to null if not stated
-6. Do NOT create entries where ALL fields are null
-
-Note: Dividends are different from business income (salary). If same company generates both, create separate entries.
-Also check for inherited shares that generate dividends - capture how_shares_acquired as "Inherited from [person]".
-
-Return a list of BusinessDividendsFields objects, one for each dividend source found.
-"""
+        instructions = load_prompt("business_dividends.txt")
         super().__init__(
             model=None,
             result_type=list[BusinessDividendsFields],

@@ -1,0 +1,99 @@
+"""Gift extraction agent."""
+
+from src.agents.base import BaseExtractionAgent
+from src.models.schemas import GiftFields
+from src.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+class GiftAgent(BaseExtractionAgent):
+    """Agent for extracting gift sources from narratives."""
+
+    def __init__(self):
+        """Initialize gift extraction agent."""
+        instructions = """
+You are a gift extraction specialist for KYC/AML compliance.
+
+Extract ALL gifts mentioned in the client narrative. Gifts can be:
+- Cash gifts
+- Property gifts
+- Asset transfers
+- Multi-generational gifts (grandparents, parents, etc.)
+
+CRITICAL RULES:
+1. Extract EXACTLY what is stated - do NOT infer or calculate
+2. If vague, capture the LITERAL text
+3. Each distinct gift is a separate entry
+4. Return empty list if no gifts mentioned
+5. Set fields to null if not stated
+6. Do NOT create entries where ALL fields are null
+
+For donor_source_of_wealth: Extract how the donor accumulated the funds being gifted.
+This is critical for compliance - capture as much detail as provided.
+
+If the narrative mentions the donor's original source (e.g., "grandfather sold his business"),
+you should extract this information in donor_source_of_wealth field.
+
+Return a list of GiftFields objects, one for each gift found.
+"""
+        super().__init__(
+            model=None,
+            result_type=list[GiftFields],
+            instructions=instructions,
+        )
+
+    async def extract_gifts(self, narrative: str) -> list[GiftFields]:
+        """Extract all gift sources from narrative.
+
+        Args:
+            narrative: Client narrative text
+
+        Returns:
+            List of gift sources (may be empty)
+        """
+        logger.info("Extracting gift sources...")
+        result = await self.extract(narrative)
+        
+        # Filter out entries where all fields are None
+        filtered = [
+            gift for gift in result
+            if any([
+                gift.donor_name,
+                gift.relationship_to_donor,
+                gift.gift_date,
+                gift.gift_value,
+                gift.donor_source_of_wealth,
+                gift.reason_for_gift,
+            ])
+        ]
+        
+        logger.info(f"Extracted {len(filtered)} gift source(s)")
+        return filtered
+
+
+if __name__ == "__main__":
+    import asyncio
+    from pathlib import Path
+
+    from src.loaders.document_loader import DocumentLoader
+    from src.utils.logging_config import setup_logging
+
+    setup_logging()
+
+    async def main():
+        doc_path = Path("training_data/case_06_multigenerational_gift/input_narrative.docx")
+        narrative = DocumentLoader.load_from_file(doc_path)
+        agent = GiftAgent()
+        results = await agent.extract_gifts(narrative)
+        
+        print(f"Found {len(results)} gift source(s):")
+        for i, gift in enumerate(results, 1):
+            print(f"\n{i}.")
+            print(f"  Donor: {gift.donor_name}")
+            print(f"  Relationship: {gift.relationship_to_donor}")
+            print(f"  Gift Date: {gift.gift_date}")
+            print(f"  Gift Value: {gift.gift_value}")
+            print(f"  Donor Source: {gift.donor_source_of_wealth}")
+
+    asyncio.run(main())

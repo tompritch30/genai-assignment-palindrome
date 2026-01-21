@@ -1,0 +1,98 @@
+"""Insurance Payout extraction agent."""
+
+from src.agents.base import BaseExtractionAgent
+from src.models.schemas import InsurancePayoutFields
+from src.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+class InsurancePayoutAgent(BaseExtractionAgent):
+    """Agent for extracting insurance payout sources from narratives."""
+
+    def __init__(self):
+        """Initialize insurance payout extraction agent."""
+        instructions = """
+You are an insurance payout extraction specialist for KYC/AML compliance.
+
+Extract ALL insurance payouts mentioned in the client narrative, including:
+- Life insurance payouts
+- Critical illness insurance
+- Accident insurance
+- Other insurance claim payouts
+
+CRITICAL RULES:
+1. Extract EXACTLY what is stated - do NOT infer or calculate
+2. If vague, capture the LITERAL text
+3. Each distinct insurance payout is a separate entry
+4. Return empty list if no insurance payouts mentioned
+5. Set fields to null if not stated
+6. Do NOT create entries where ALL fields are null
+
+Note: Insurance payouts are DISTINCT from inheritance, even if both stem from the same event
+(e.g., spouse's death). Insurance proceeds pass directly to beneficiary, not through estate.
+
+For policy_type: Capture type of insurance (e.g., "Life insurance", "Critical illness", "Accident")
+For claim_event_description: Capture what triggered the claim (e.g., "Death of spouse", "Critical illness diagnosis")
+
+Return a list of InsurancePayoutFields objects, one for each insurance payout found.
+"""
+        super().__init__(
+            model=None,
+            result_type=list[InsurancePayoutFields],
+            instructions=instructions,
+        )
+
+    async def extract_insurance_payouts(self, narrative: str) -> list[InsurancePayoutFields]:
+        """Extract all insurance payout sources from narrative.
+
+        Args:
+            narrative: Client narrative text
+
+        Returns:
+            List of insurance payout sources (may be empty)
+        """
+        logger.info("Extracting insurance payout sources...")
+        result = await self.extract(narrative)
+        
+        # Filter out entries where all fields are None
+        filtered = [
+            insurance for insurance in result
+            if any([
+                insurance.insurance_provider,
+                insurance.policy_type,
+                insurance.claim_event_description,
+                insurance.payout_date,
+                insurance.payout_amount,
+            ])
+        ]
+        
+        logger.info(f"Extracted {len(filtered)} insurance payout source(s)")
+        return filtered
+
+
+if __name__ == "__main__":
+    import asyncio
+    from pathlib import Path
+
+    from src.loaders.document_loader import DocumentLoader
+    from src.utils.logging_config import setup_logging
+
+    setup_logging()
+
+    async def main():
+        doc_path = Path("holdout_data/case_14_insurance_inheritance/input_narrative.docx")
+        narrative = DocumentLoader.load_from_file(doc_path)
+        agent = InsurancePayoutAgent()
+        results = await agent.extract_insurance_payouts(narrative)
+        
+        print(f"Found {len(results)} insurance payout source(s):")
+        for i, insurance in enumerate(results, 1):
+            print(f"\n{i}.")
+            print(f"  Provider: {insurance.insurance_provider}")
+            print(f"  Policy Type: {insurance.policy_type}")
+            print(f"  Claim Event: {insurance.claim_event_description}")
+            print(f"  Payout Date: {insurance.payout_date}")
+            print(f"  Payout Amount: {insurance.payout_amount}")
+
+    asyncio.run(main())

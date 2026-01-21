@@ -32,11 +32,18 @@ from src.models.schemas import (
     ExtractionMetadata,
     ExtractionResult,
     ExtractionSummary,
-    MissingField,
     SourceOfWealth,
     SourceType,
 )
 from src.utils.logging_config import get_logger
+from src.utils.sow_utils import (
+    calculate_completeness,
+    calculate_summary,
+    detect_compliance_flags,
+    detect_overlapping_sources,
+    generate_description,
+    parse_net_worth,
+)
 
 logger = get_logger(__name__)
 
@@ -64,7 +71,7 @@ class Orchestrator:
         # Load knowledge base for completeness calculations
         self.knowledge_base = get_knowledge_base()
 
-        # Create follow-up question agent
+        # Initialize follow-up question agent
         self.followup_agent = FollowUpQuestionAgent()
 
         # Create metadata extraction agent
@@ -103,35 +110,6 @@ Example output format:
         )
 
         logger.info("Orchestrator initialized successfully")
-
-    def _parse_net_worth(self, value: Any) -> float | None:
-        """Parse net worth value from various formats.
-
-        Args:
-            value: Net worth value (could be number, string with currency, etc.)
-
-        Returns:
-            Float value or None if cannot parse
-        """
-        if value is None:
-            return None
-
-        if isinstance(value, (int, float)):
-            return float(value)
-
-        if isinstance(value, str):
-            # Remove currency symbols, commas, and whitespace
-            cleaned = value.replace("£", "").replace("$", "").replace("€", "")
-            cleaned = cleaned.replace(",", "").replace(" ", "").strip()
-
-            # Try to parse as float
-            try:
-                return float(cleaned)
-            except ValueError:
-                logger.warning(f"Could not parse net worth value: {value}")
-                return None
-
-        return None
 
     async def extract_metadata(self, narrative: str) -> ExtractionMetadata:
         """Extract metadata from narrative with retry on rate limits.
@@ -214,7 +192,7 @@ Example output format:
 
             # Parse net worth (handle string formats like "£1,800,000")
             net_worth_raw = metadata_dict.get("total_stated_net_worth")
-            net_worth = self._parse_net_worth(net_worth_raw)
+            net_worth = parse_net_worth(net_worth_raw)
 
             metadata = ExtractionMetadata(
                 case_id=metadata_dict.get("case_id"),
@@ -317,254 +295,6 @@ Example output format:
 
         return agent_results
 
-    def calculate_completeness(
-        self, source_type: str, extracted_fields: dict[str, Any]
-    ) -> tuple[float, list[MissingField]]:
-        """Calculate completeness score for a source.
-
-        Args:
-            source_type: Type of source (e.g., "employment_income")
-            extracted_fields: Dictionary of extracted field values
-
-        Returns:
-            Tuple of (completeness_score, list_of_missing_fields)
-        """
-        try:
-            required_fields = self.knowledge_base.get_required_fields(source_type)
-        except Exception as e:
-            logger.warning(f"Could not get required fields for {source_type}: {e}")
-            return 1.0, []
-
-        if not required_fields:
-            return 1.0, []
-
-        populated_count = 0
-        missing_fields = []
-
-        for field_name in required_fields.keys():
-            field_value = extracted_fields.get(field_name)
-
-            if field_value is not None and field_value != "":
-                populated_count += 1
-            else:
-                # Determine reason for missing field
-                reason = "Not stated in narrative"
-
-                # Check for N/A cases (e.g., purchase price for inherited property)
-                if source_type == SourceType.SALE_OF_PROPERTY:
-                    if field_name == "original_purchase_price":
-                        acquisition_method = extracted_fields.get(
-                            "original_acquisition_method", ""
-                        )
-                        if (
-                            acquisition_method
-                            and "inherit" in acquisition_method.lower()
-                        ):
-                            reason = (
-                                "Not applicable (property was inherited, not purchased)"
-                            )
-
-                missing_fields.append(
-                    MissingField(
-                        field_name=field_name,
-                        reason=reason,
-                        partially_answered=False,
-                    )
-                )
-
-        completeness = (
-            populated_count / len(required_fields) if required_fields else 1.0
-        )
-
-        logger.debug(
-            f"Completeness for {source_type}: {completeness:.2f} "
-            f"({populated_count}/{len(required_fields)} fields)"
-        )
-
-        return completeness, missing_fields
-
-    def _detect_compliance_flags(
-        self, source_type: SourceType, extracted_fields: dict[str, Any]
-    ) -> list[str]:
-        """Detect compliance concerns or ambiguities in extracted data.
-
-        Args:
-            source_type: Type of source
-            extracted_fields: Extracted field values
-
-        Returns:
-            List of compliance flag messages
-        """
-        flags = []
-
-        # Ambiguous transaction classification
-        if source_type == SourceType.GIFT:
-            # Check for loan-related terminology
-            reason = (extracted_fields.get("reason_for_gift") or "").lower()
-            donor_source = (
-                extracted_fields.get("donor_source_of_wealth") or ""
-            ).lower()
-
-            if any(
-                keyword in reason or keyword in donor_source
-                for keyword in [
-                    "loan",
-                    "repay",
-                    "paid back",
-                    "thank you",
-                    "extra",
-                    "owe",
-                    "debt",
-                ]
-            ):
-                flags.append(
-                    "Ambiguous transaction: Description suggests possible loan repayment or business payment rather than pure gift. Requires compliance review."
-                )
-
-        # Check for round numbers that might be estimates
-        for field_name in ["gift_value", "amount_inherited", "settlement_amount"]:
-            if field_name in extracted_fields:
-                value_str = str(extracted_fields[field_name] or "")
-                # Check for qualifiers like "around", "approximately", "about"
-                if any(
-                    word in value_str.lower()
-                    for word in ["around", "approximately", "about", "roughly", "~"]
-                ):
-                    flags.append(
-                        f"Estimated value: '{value_str}' contains approximate qualifier - exact amount should be verified"
-                    )
-
-        # Check for unrealized/pending payments
-        if source_type == SourceType.SALE_OF_BUSINESS:
-            sale_proceeds = str(extracted_fields.get("sale_proceeds") or "").lower()
-            if any(
-                keyword in sale_proceeds
-                for keyword in ["pending", "expected", "subject to", "earnout"]
-            ):
-                flags.append(
-                    "Contingent payment: Sale includes unrealized/pending components - verify payment status"
-                )
-
-        # Check for missing verification on high-value sources
-        if source_type == SourceType.LOTTERY_WINNINGS:
-            verification = extracted_fields.get("verification_details")
-            if not verification:
-                flags.append(
-                    "High-risk source: Lottery winnings require verification documentation (provider, date, amount)"
-                )
-
-        # Check for vague employment descriptions
-        if source_type == SourceType.EMPLOYMENT_INCOME:
-            compensation = str(
-                extracted_fields.get("annual_compensation") or ""
-            ).lower()
-            if any(
-                word in compensation
-                for word in ["good", "decent", "reasonable", "high"]
-            ):
-                flags.append(
-                    f"Vague compensation: '{compensation}' is qualitative - specific amount required"
-                )
-
-        return flags
-
-    def _detect_overlapping_sources(
-        self, sources: list[SourceOfWealth]
-    ) -> list[SourceOfWealth]:
-        """Detect sources that relate to the same event.
-
-        Args:
-            sources: List of all sources
-
-        Returns:
-            Updated list of sources with overlapping_sources field populated
-        """
-        # Same event, multiple sources (e.g., spouse death → insurance + inheritance)
-
-        # Group sources by potential triggering events
-        death_related_sources: dict[str, list[str]] = {}  # deceased_name -> source_ids
-        business_related_sources: dict[
-            str, list[str]
-        ] = {}  # business_name -> source_ids
-
-        for source in sources:
-            # Check for death-related sources
-            if source.source_type == SourceType.INHERITANCE:
-                deceased_name = source.extracted_fields.get("deceased_name")
-                if deceased_name:
-                    if deceased_name not in death_related_sources:
-                        death_related_sources[deceased_name] = []
-                    death_related_sources[deceased_name].append(source.source_id)
-
-            elif source.source_type == SourceType.INSURANCE_PAYOUT:
-                # Check if life insurance (indicates death event)
-                policy_type = (source.extracted_fields.get("policy_type") or "").lower()
-                if "life" in policy_type:
-                    # Try to identify deceased from other fields
-                    # For now, mark all life insurance as potentially overlapping
-                    deceased_key = "life_insurance_event"
-                    if deceased_key not in death_related_sources:
-                        death_related_sources[deceased_key] = []
-                    death_related_sources[deceased_key].append(source.source_id)
-
-            # Check for business-related overlap
-            if source.source_type in [
-                SourceType.BUSINESS_INCOME,
-                SourceType.BUSINESS_DIVIDENDS,
-                SourceType.SALE_OF_BUSINESS,
-            ]:
-                business_name = source.extracted_fields.get(
-                    "business_name"
-                ) or source.extracted_fields.get("company_name")
-                if business_name:
-                    if business_name not in business_related_sources:
-                        business_related_sources[business_name] = []
-                    business_related_sources[business_name].append(source.source_id)
-
-        # Update sources with overlapping information
-        for source in sources:
-            overlapping = []
-
-            # Check death-related overlaps
-            if source.source_type in [
-                SourceType.INHERITANCE,
-                SourceType.INSURANCE_PAYOUT,
-            ]:
-                deceased_name = source.extracted_fields.get("deceased_name")
-                if deceased_name and deceased_name in death_related_sources:
-                    overlapping = [
-                        sid
-                        for sid in death_related_sources[deceased_name]
-                        if sid != source.source_id
-                    ]
-                elif source.source_type == SourceType.INSURANCE_PAYOUT:
-                    policy_type = (
-                        source.extracted_fields.get("policy_type") or ""
-                    ).lower()
-                    if "life" in policy_type:
-                        deceased_key = "life_insurance_event"
-                        if deceased_key in death_related_sources:
-                            overlapping = [
-                                sid
-                                for sid in death_related_sources[deceased_key]
-                                if sid != source.source_id
-                            ]
-
-            # Update source if overlaps found
-            if overlapping:
-                source.overlapping_sources = overlapping
-                # Add note about overlap
-                if source.notes:
-                    source.notes += (
-                        f" | Overlaps with sources: {', '.join(overlapping)}"
-                    )
-                else:
-                    source.notes = (
-                        f"Related to same event as sources: {', '.join(overlapping)}"
-                    )
-
-        return sources
-
     def merge_results_to_sources(
         self,
         agent_results: dict[str, list[Any]],
@@ -593,7 +323,7 @@ Example output format:
                 extracted_fields = extracted_fields_obj.model_dump()
 
                 # Calculate completeness
-                completeness, missing = self.calculate_completeness(
+                completeness, missing = calculate_completeness(
                     source_type, extracted_fields
                 )
 
@@ -602,7 +332,7 @@ Example output format:
                 source_counter += 1
 
                 # Generate description
-                description = self._generate_description(source_type, extracted_fields)
+                description = generate_description(source_type, extracted_fields)
 
                 # Handle attribution for joint accounts
                 attributed_to = None
@@ -637,7 +367,7 @@ Example output format:
                             notes = f"Related to same business entity as: {', '.join(other_entries)}"
 
                 # Detect compliance flags for ambiguous transactions
-                compliance_flags = self._detect_compliance_flags(
+                compliance_flags = detect_compliance_flags(
                     source_type, extracted_fields
                 )
 
@@ -659,71 +389,6 @@ Example output format:
         logger.info(f"Merged {len(sources)} sources with IDs assigned")
         return sources
 
-    def _generate_description(
-        self, source_type: SourceType, extracted_fields: dict[str, Any]
-    ) -> str:
-        """Generate human-readable description for a source.
-
-        Args:
-            source_type: Type of source
-            extracted_fields: Extracted field values
-
-        Returns:
-            Human-readable description string
-        """
-        # Generate descriptions based on source type
-        if source_type == SourceType.EMPLOYMENT_INCOME:
-            job_title = extracted_fields.get("job_title", "Employment")
-            employer = extracted_fields.get("employer_name", "")
-            if employer:
-                return f"{job_title} at {employer}"
-            return job_title
-
-        elif source_type == SourceType.SALE_OF_PROPERTY:
-            address = extracted_fields.get("property_address", "Property")
-            return f"Sale of property: {address}"
-
-        elif source_type == SourceType.BUSINESS_INCOME:
-            business = extracted_fields.get("business_name", "Business")
-            return f"Income from {business}"
-
-        elif source_type == SourceType.BUSINESS_DIVIDENDS:
-            company = extracted_fields.get("company_name", "Company")
-            return f"Dividends from {company}"
-
-        elif source_type == SourceType.SALE_OF_BUSINESS:
-            business = extracted_fields.get("business_name", "Business")
-            return f"Sale of {business}"
-
-        elif source_type == SourceType.SALE_OF_ASSET:
-            asset = extracted_fields.get("asset_description", "Asset")
-            return f"Sale of {asset}"
-
-        elif source_type == SourceType.INHERITANCE:
-            deceased = extracted_fields.get("deceased_name", "unknown person")
-            return f"Inheritance from {deceased}"
-
-        elif source_type == SourceType.GIFT:
-            donor = extracted_fields.get("donor_name", "donor")
-            return f"Gift from {donor}"
-
-        elif source_type == SourceType.DIVORCE_SETTLEMENT:
-            spouse = extracted_fields.get("former_spouse_name", "former spouse")
-            return f"Divorce settlement from {spouse}"
-
-        elif source_type == SourceType.LOTTERY_WINNINGS:
-            lottery = extracted_fields.get("lottery_name", "Lottery")
-            return f"Winnings from {lottery}"
-
-        elif source_type == SourceType.INSURANCE_PAYOUT:
-            provider = extracted_fields.get("insurance_provider", "Insurance")
-            policy_type = extracted_fields.get("policy_type", "")
-            if policy_type:
-                return f"{policy_type} payout from {provider}"
-            return f"Insurance payout from {provider}"
-
-        return source_type.replace("_", " ").title()
-
     def _determine_attribution(
         self,
         source_type: str,
@@ -744,34 +409,6 @@ Example output format:
         # analysis of the narrative to determine attribution
         # This is a placeholder for future enhancement
         return None
-
-    def calculate_summary(self, sources: list[SourceOfWealth]) -> ExtractionSummary:
-        """Calculate summary statistics.
-
-        Args:
-            sources: List of extracted sources
-
-        Returns:
-            ExtractionSummary with statistics
-        """
-        total_sources = len(sources)
-        fully_complete = sum(1 for s in sources if s.completeness_score == 1.0)
-        with_missing = sum(1 for s in sources if len(s.missing_fields) > 0)
-
-        # Calculate overall completeness as weighted average
-        if total_sources > 0:
-            overall_completeness = (
-                sum(s.completeness_score for s in sources) / total_sources
-            )
-        else:
-            overall_completeness = 1.0
-
-        return ExtractionSummary(
-            total_sources_identified=total_sources,
-            fully_complete_sources=fully_complete,
-            sources_with_missing_fields=with_missing,
-            overall_completeness_score=overall_completeness,
-        )
 
     async def process(self, narrative: str) -> ExtractionResult:
         """Process a narrative and extract all SOW information.
@@ -797,10 +434,10 @@ Example output format:
             )
 
             # Step 4: Detect overlapping sources (same event, multiple sources)
-            sources = self._detect_overlapping_sources(sources)
+            sources = detect_overlapping_sources(sources)
 
             # Step 5: Calculate summary
-            summary = self.calculate_summary(sources)
+            summary = calculate_summary(sources)
 
             # Step 6: Generate follow-up questions using dedicated agent
             # Create preliminary result for question generation

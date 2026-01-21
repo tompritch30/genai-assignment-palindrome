@@ -1,70 +1,67 @@
-"""Unit tests for orchestrator utility methods (deterministic, no LLM calls).
+"""Unit tests for SOW utility functions (deterministic, no LLM calls).
 
-These tests run fast and can be included in CI/CD.
+These tests run fast and can be included in CI/CD without requiring OpenAI API keys.
 
 pytest tests/test_orchestrator_utils.py -v
 """
 
-from src.agents.orchestrator import Orchestrator
 from src.models.schemas import (
     MissingField,
     SourceOfWealth,
     SourceType,
 )
+from src.utils.sow_utils import (
+    calculate_completeness,
+    calculate_summary,
+    detect_compliance_flags,
+    detect_overlapping_sources,
+    generate_description,
+    parse_net_worth,
+)
 
 
 class TestNetWorthParsing:
-    """Tests for _parse_net_worth method."""
+    """Tests for parse_net_worth function."""
 
     def test_parse_integer(self):
         """Test parsing plain integer."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth(1800000) == 1800000.0
+        assert parse_net_worth(1800000) == 1800000.0
 
     def test_parse_float(self):
         """Test parsing plain float."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth(1800000.5) == 1800000.5
+        assert parse_net_worth(1800000.5) == 1800000.5
 
     def test_parse_string_with_pounds(self):
         """Test parsing string with £ symbol."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("£1,800,000") == 1800000.0
+        assert parse_net_worth("£1,800,000") == 1800000.0
 
     def test_parse_string_with_dollar(self):
         """Test parsing string with $ symbol."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("$1,800,000") == 1800000.0
+        assert parse_net_worth("$1,800,000") == 1800000.0
 
     def test_parse_string_with_euro(self):
         """Test parsing string with € symbol."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("€1,800,000") == 1800000.0
+        assert parse_net_worth("€1,800,000") == 1800000.0
 
     def test_parse_string_with_commas(self):
         """Test parsing string with comma separators."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("1,800,000") == 1800000.0
+        assert parse_net_worth("1,800,000") == 1800000.0
 
     def test_parse_string_with_spaces(self):
         """Test parsing string with spaces."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("1 800 000") == 1800000.0
+        assert parse_net_worth("1 800 000") == 1800000.0
 
     def test_parse_none(self):
         """Test parsing None returns None."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth(None) is None
+        assert parse_net_worth(None) is None
 
     def test_parse_invalid_string(self):
         """Test parsing invalid string returns None."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("not a number") is None
+        assert parse_net_worth("not a number") is None
 
     def test_parse_complex_format(self):
         """Test parsing complex formatted string."""
-        orchestrator = Orchestrator()
-        assert orchestrator._parse_net_worth("£ 1,800,000.50") == 1800000.5
+        assert parse_net_worth("£ 1,800,000.50") == 1800000.5
 
 
 class TestComplianceFlagDetection:
@@ -72,25 +69,23 @@ class TestComplianceFlagDetection:
 
     def test_ambiguous_gift_loan_repayment(self):
         """Test flagging ambiguous gift that might be loan repayment."""
-        orchestrator = Orchestrator()
         fields = {
             "donor_name": "Friend",
             "reason_for_gift": "paid back with extra as thank you",
             "gift_value": "£5,000",
         }
-        flags = orchestrator._detect_compliance_flags(SourceType.GIFT, fields)
+        flags = detect_compliance_flags(SourceType.GIFT, fields)
 
         assert len(flags) > 0
         assert any("ambiguous" in flag.lower() for flag in flags)
 
     def test_ambiguous_gift_with_loan_keyword(self):
         """Test flagging gift with 'loan' mentioned."""
-        orchestrator = Orchestrator()
         fields = {
             "donor_name": "Uncle",
             "reason_for_gift": "repayment of loan from 2020",
         }
-        flags = orchestrator._detect_compliance_flags(SourceType.GIFT, fields)
+        flags = detect_compliance_flags(SourceType.GIFT, fields)
 
         assert len(flags) > 0
         assert any(
@@ -99,9 +94,8 @@ class TestComplianceFlagDetection:
 
     def test_vague_gift_amount(self):
         """Test flagging vague gift amount."""
-        orchestrator = Orchestrator()
         fields = {"gift_value": "around £100,000, maybe more"}
-        flags = orchestrator._detect_compliance_flags(SourceType.GIFT, fields)
+        flags = detect_compliance_flags(SourceType.GIFT, fields)
 
         assert len(flags) > 0
         assert any(
@@ -111,11 +105,8 @@ class TestComplianceFlagDetection:
 
     def test_vague_employment_compensation(self):
         """Test flagging vague employment compensation."""
-        orchestrator = Orchestrator()
         fields = {"annual_compensation": "good salary"}
-        flags = orchestrator._detect_compliance_flags(
-            SourceType.EMPLOYMENT_INCOME, fields
-        )
+        flags = detect_compliance_flags(SourceType.EMPLOYMENT_INCOME, fields)
 
         assert len(flags) > 0
         assert any(
@@ -124,11 +115,8 @@ class TestComplianceFlagDetection:
 
     def test_pending_business_sale(self):
         """Test flagging pending/earnout payments."""
-        orchestrator = Orchestrator()
         fields = {"sale_proceeds": "£1M upfront + £500k earnout pending"}
-        flags = orchestrator._detect_compliance_flags(
-            SourceType.SALE_OF_BUSINESS, fields
-        )
+        flags = detect_compliance_flags(SourceType.SALE_OF_BUSINESS, fields)
 
         assert len(flags) > 0
         assert any(
@@ -137,29 +125,23 @@ class TestComplianceFlagDetection:
 
     def test_lottery_without_verification(self):
         """Test flagging lottery winnings without verification."""
-        orchestrator = Orchestrator()
         fields = {
             "lottery_name": "National Lottery",
             "win_amount": "£1,000,000",
         }
-        flags = orchestrator._detect_compliance_flags(
-            SourceType.LOTTERY_WINNINGS, fields
-        )
+        flags = detect_compliance_flags(SourceType.LOTTERY_WINNINGS, fields)
 
         assert len(flags) > 0
         assert any("verification" in flag.lower() for flag in flags)
 
     def test_no_flags_for_clean_data(self):
         """Test no flags for clean, complete data."""
-        orchestrator = Orchestrator()
         fields = {
             "employer_name": "Acme Corp",
             "job_title": "Software Engineer",
             "annual_compensation": "£85,000",
         }
-        flags = orchestrator._detect_compliance_flags(
-            SourceType.EMPLOYMENT_INCOME, fields
-        )
+        flags = detect_compliance_flags(SourceType.EMPLOYMENT_INCOME, fields)
 
         assert len(flags) == 0
 
@@ -169,62 +151,55 @@ class TestDescriptionGeneration:
 
     def test_employment_with_employer(self):
         """Test employment description with employer name."""
-        orchestrator = Orchestrator()
         fields = {"job_title": "Software Engineer", "employer_name": "Acme Corp"}
-        desc = orchestrator._generate_description(SourceType.EMPLOYMENT_INCOME, fields)
+        desc = generate_description(SourceType.EMPLOYMENT_INCOME, fields)
 
         assert "Software Engineer" in desc
         assert "Acme Corp" in desc
 
     def test_employment_without_employer(self):
         """Test employment description without employer name."""
-        orchestrator = Orchestrator()
         fields = {"job_title": "Consultant"}
-        desc = orchestrator._generate_description(SourceType.EMPLOYMENT_INCOME, fields)
+        desc = generate_description(SourceType.EMPLOYMENT_INCOME, fields)
 
         assert "Consultant" in desc
 
     def test_property_sale(self):
         """Test property sale description."""
-        orchestrator = Orchestrator()
         fields = {"property_address": "123 Main St, London"}
-        desc = orchestrator._generate_description(SourceType.SALE_OF_PROPERTY, fields)
+        desc = generate_description(SourceType.SALE_OF_PROPERTY, fields)
 
         assert "123 Main St, London" in desc
         assert "property" in desc.lower()
 
     def test_business_income(self):
         """Test business income description."""
-        orchestrator = Orchestrator()
         fields = {"business_name": "Tech Solutions Ltd"}
-        desc = orchestrator._generate_description(SourceType.BUSINESS_INCOME, fields)
+        desc = generate_description(SourceType.BUSINESS_INCOME, fields)
 
         assert "Tech Solutions Ltd" in desc
         assert "Income" in desc
 
     def test_gift(self):
         """Test gift description."""
-        orchestrator = Orchestrator()
         fields = {"donor_name": "Uncle John"}
-        desc = orchestrator._generate_description(SourceType.GIFT, fields)
+        desc = generate_description(SourceType.GIFT, fields)
 
         assert "Uncle John" in desc
         assert "Gift" in desc
 
     def test_inheritance(self):
         """Test inheritance description."""
-        orchestrator = Orchestrator()
         fields = {"deceased_name": "Grandfather Smith"}
-        desc = orchestrator._generate_description(SourceType.INHERITANCE, fields)
+        desc = generate_description(SourceType.INHERITANCE, fields)
 
         assert "Grandfather Smith" in desc
         assert "Inheritance" in desc
 
     def test_insurance_with_policy_type(self):
         """Test insurance description with policy type."""
-        orchestrator = Orchestrator()
         fields = {"insurance_provider": "Prudential", "policy_type": "Life Insurance"}
-        desc = orchestrator._generate_description(SourceType.INSURANCE_PAYOUT, fields)
+        desc = generate_description(SourceType.INSURANCE_PAYOUT, fields)
 
         assert "Prudential" in desc
         assert "Life Insurance" in desc
@@ -235,8 +210,6 @@ class TestOverlappingSourcesDetection:
 
     def test_death_event_overlap(self):
         """Test detecting overlap between inheritance and life insurance from same person."""
-        orchestrator = Orchestrator()
-
         sources = [
             SourceOfWealth(
                 source_type=SourceType.INHERITANCE,
@@ -259,7 +232,7 @@ class TestOverlappingSourcesDetection:
             ),
         ]
 
-        updated = orchestrator._detect_overlapping_sources(sources)
+        updated = detect_overlapping_sources(sources)
 
         # Check if any overlaps were detected
         has_overlaps = any(s.overlapping_sources for s in updated)
@@ -269,8 +242,6 @@ class TestOverlappingSourcesDetection:
 
     def test_no_overlap_different_sources(self):
         """Test no overlap detection for unrelated sources."""
-        orchestrator = Orchestrator()
-
         sources = [
             SourceOfWealth(
                 source_type=SourceType.EMPLOYMENT_INCOME,
@@ -290,7 +261,7 @@ class TestOverlappingSourcesDetection:
             ),
         ]
 
-        updated = orchestrator._detect_overlapping_sources(sources)
+        updated = detect_overlapping_sources(sources)
 
         # Should not detect overlaps between unrelated sources
         for source in updated:
@@ -305,8 +276,6 @@ class TestCompletenessCalculation:
 
     def test_fully_complete_source(self):
         """Test completeness calculation for fully complete source."""
-        orchestrator = Orchestrator()
-
         fields = {
             "employer_name": "Acme Corp",
             "job_title": "Engineer",
@@ -316,7 +285,7 @@ class TestCompletenessCalculation:
             "country_of_employment": "United Kingdom",
         }
 
-        completeness, missing = orchestrator.calculate_completeness(
+        completeness, missing = calculate_completeness(
             SourceType.EMPLOYMENT_INCOME, fields
         )
 
@@ -325,15 +294,13 @@ class TestCompletenessCalculation:
 
     def test_partially_complete_source(self):
         """Test completeness calculation for partially complete source."""
-        orchestrator = Orchestrator()
-
         fields = {
             "employer_name": "Acme Corp",
             "job_title": "Engineer",
             # Missing: start_date, end_date, compensation, country
         }
 
-        completeness, missing = orchestrator.calculate_completeness(
+        completeness, missing = calculate_completeness(
             SourceType.EMPLOYMENT_INCOME, fields
         )
 
@@ -342,11 +309,9 @@ class TestCompletenessCalculation:
 
     def test_empty_source(self):
         """Test completeness calculation for empty source."""
-        orchestrator = Orchestrator()
-
         fields = {}
 
-        completeness, missing = orchestrator.calculate_completeness(
+        completeness, missing = calculate_completeness(
             SourceType.EMPLOYMENT_INCOME, fields
         )
 
@@ -393,8 +358,6 @@ class TestCalculateSummary:
 
     def test_summary_all_complete(self):
         """Test summary calculation with all complete sources."""
-        orchestrator = Orchestrator()
-
         sources = [
             SourceOfWealth(
                 source_type=SourceType.EMPLOYMENT_INCOME,
@@ -414,7 +377,7 @@ class TestCalculateSummary:
             ),
         ]
 
-        summary = orchestrator.calculate_summary(sources)
+        summary = calculate_summary(sources)
 
         assert summary.total_sources_identified == 2
         assert summary.fully_complete_sources == 2
@@ -423,8 +386,6 @@ class TestCalculateSummary:
 
     def test_summary_mixed_completeness(self):
         """Test summary calculation with mixed completeness."""
-        orchestrator = Orchestrator()
-
         sources = [
             SourceOfWealth(
                 source_type=SourceType.EMPLOYMENT_INCOME,
@@ -446,7 +407,7 @@ class TestCalculateSummary:
             ),
         ]
 
-        summary = orchestrator.calculate_summary(sources)
+        summary = calculate_summary(sources)
 
         assert summary.total_sources_identified == 2
         assert summary.fully_complete_sources == 1
@@ -455,10 +416,9 @@ class TestCalculateSummary:
 
     def test_summary_empty_sources(self):
         """Test summary calculation with no sources."""
-        orchestrator = Orchestrator()
         sources = []
 
-        summary = orchestrator.calculate_summary(sources)
+        summary = calculate_summary(sources)
 
         assert summary.total_sources_identified == 0
         assert summary.overall_completeness_score == 1.0  # Default when no sources

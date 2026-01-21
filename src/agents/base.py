@@ -4,6 +4,13 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
+from pydantic_ai.exceptions import ModelHTTPError
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 from src.config.settings import settings
 from src.utils.logging_config import get_logger
@@ -53,14 +60,24 @@ class BaseExtractionAgent:
 
         return self._agent
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        retry=retry_if_exception_type(ModelHTTPError),
+        reraise=True,
+    )
     async def extract(self, narrative: str) -> T | list[T]:
-        """Extract information from narrative text.
+        """Extract information from narrative text with retry on rate limits.
 
         Args:
             narrative: Client narrative text
 
         Returns:
             Extracted structured data (single instance or list)
+
+        Raises:
+            ModelHTTPError: If rate limit persists after retries
+            Exception: For other errors
         """
         agent = self._create_agent()
 
@@ -78,12 +95,26 @@ class BaseExtractionAgent:
                 "seed": settings.extraction_seed,
             }
 
-        # Use output_type in run() call (matches llm_connection.py pattern)
-        result = await agent.run(
-            narrative,
-            output_type=self.result_type,
-            model_settings=model_settings,
-        )
+        try:
+            # Use output_type in run() call (matches llm_connection.py pattern)
+            result = await agent.run(
+                narrative,
+                output_type=self.result_type,
+                model_settings=model_settings,
+            )
 
-        # pydantic-ai returns result.output for structured output
-        return result.output
+            # pydantic-ai returns result.output for structured output
+            return result.output
+
+        except ModelHTTPError as e:
+            if e.status_code == 429:
+                logger.warning(
+                    f"Rate limit hit for {self.__class__.__name__}, retrying with backoff..."
+                )
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error in {self.__class__.__name__} extraction: {e}",
+                exc_info=True,
+            )
+            raise

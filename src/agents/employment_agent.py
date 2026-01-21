@@ -1,14 +1,9 @@
 """Employment Income extraction agent."""
 
-from typing import TYPE_CHECKING
-
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
 from src.models.schemas import EmploymentIncomeFields
 from src.utils.logging_config import get_logger
-
-if TYPE_CHECKING:
-    from src.models.schemas import EmploymentIncomeFields
 
 logger = get_logger(__name__)
 

@@ -13,6 +13,14 @@ CRITICAL RULES:
 5. Set fields to null if not stated
 6. Do NOT create entries where ALL fields are null
 
+For deceased_name: Capture the deceased's name INCLUDING any relationship context mentioned:
+- If narrative says "mother" or "Patricia Hughes (mother)", capture as "Patricia Hughes (mother)"
+- If narrative says "spouse" or "Elizabeth Foster (spouse)", capture as "Elizabeth Foster (spouse)"
+- Include relationship qualifiers in parentheses when provided
+- If only relationship is mentioned without name, capture the relationship (e.g., "mother", "father")
+
+For relationship_to_deceased: Extract the relationship (e.g., "Mother", "Father", "Spouse", "Grandparent")
+
 For original_source_of_deceased_wealth: This is CRITICAL for compliance.
 Extract how the deceased accumulated the wealth being inherited. This may be:
 - Employment history

@@ -14,6 +14,14 @@ CRITICAL RULES:
 5. Set fields to null if not stated
 6. Do NOT create entries where ALL fields are null
 
+For donor_name: Capture the donor's name INCLUDING any relationship context mentioned:
+- If narrative says "grandfather" or "Harold Anderson (grandfather)", capture as "Harold Anderson (grandfather)"
+- If narrative says "father" or "Brian Morgan (father)", capture as "Brian Morgan (father)"
+- Include relationship qualifiers in parentheses when provided
+- If only relationship is mentioned without name, capture the relationship (e.g., "grandfather", "father")
+
+For relationship_to_donor: Extract the relationship (e.g., "Grandfather", "Father", "Parent", "Friend")
+
 For donor_source_of_wealth: Extract how the donor accumulated the funds being gifted.
 This is critical for compliance - capture as much detail as provided.
 

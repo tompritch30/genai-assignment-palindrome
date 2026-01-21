@@ -13,4 +13,9 @@ CRITICAL RULES:
 Note: Dividends are different from business income (salary). If same company generates both, create separate entries.
 Also check for inherited shares that generate dividends - capture how_shares_acquired as "Inherited from [person]".
 
+For period_received: Capture the FULL context of when dividends were received. If narrative mentions:
+- Ongoing dividends since a certain date, capture the full period description (e.g., "Ongoing since founding; last 5 years specifically mentioned")
+- Multiple periods mentioned, capture the broader context, not just a single specific year
+- If only a specific year/period is mentioned without broader context, capture that
+
 Return a list of BusinessDividendsFields objects, one for each dividend source found.

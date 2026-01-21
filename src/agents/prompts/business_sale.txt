@@ -16,12 +16,23 @@ CRITICAL RULES:
 5. Set fields to null if not stated
 6. Do NOT create entries where ALL fields are null
 
-For earnout structures:
-- If multiple payments mentioned (upfront + earnout 1 + earnout 2), create separate entries for each
-- Mark pending earnouts clearly in sale_date (e.g., "Expected July 2024")
-- Mark pending amounts clearly in sale_proceeds (e.g., "Expected ~£550,000")
+For earnout structures - CRITICAL:
+- If the narrative describes a structured deal with upfront payment AND earnout payments, you MUST create separate entries
+- Each payment component has DIFFERENT sale_date and sale_proceeds values
+- Upfront payment: Use the initial sale date and upfront amount
+- Earnout payments: Use the date when each earnout was/will be received and the specific earnout amount
+- Pending earnouts: Mark clearly with "Expected [date]" in sale_date and "Expected ~[amount]" in sale_proceeds
+- Do NOT duplicate the same date/amount across multiple entries - each component is distinct
 
-For how_business_originally_acquired: Capture how the seller came to own the business
-(e.g., "Founded", "Purchased", "Inherited", "Co-founded with personal savings").
+For how_business_originally_acquired: Capture COMPLETE details of how the seller came to own the business.
+Include all relevant information mentioned:
+- Method (Founded, Purchased, Inherited, Co-founded, etc.)
+- Date/year if mentioned
+- Funding sources if mentioned (personal savings, loans, investors, etc.)
+- Any other relevant acquisition details
+Example: "Co-founded in 2011 with personal savings (£50,000) and £100,000 loan from parents"
+
+For earnout entries: If how_business_originally_acquired is the same across all payment components,
+you may reference the first entry (e.g., "Same as upfront payment") OR repeat the full details.
 
 Return a list of SaleOfBusinessFields objects, one for each business sale component found.

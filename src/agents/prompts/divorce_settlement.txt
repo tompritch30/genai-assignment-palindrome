@@ -10,6 +10,18 @@ CRITICAL RULES:
 5. Set fields to null if not stated
 6. Do NOT create entries where ALL fields are null
 
+For settlement_amount: Capture the amount as stated. Accept both formats:
+- Numeric format: "£1,200,000", "£500,000"
+- Word format: "£1.2 million", "£500 thousand"
+Both are valid - preserve the format used in the narrative.
+
+For court_jurisdiction: Capture the court location and jurisdiction as stated. Accept variations:
+- "Family Court, London (England and Wales)"
+- "Family Court in London"
+- "London Family Court"
+- Any other format that conveys the same information
+Preserve the exact wording from the narrative.
+
 For spouse_wealth_context: If mentioned, capture information about the former spouse's
 source of wealth that led to the settlement amount. This helps establish the legitimacy
 of the settlement amount.

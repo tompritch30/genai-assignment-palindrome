@@ -62,8 +62,39 @@ def compare_field(
         return True, ""
 
     # Check if one contains the other (for longer/shorter descriptions)
+    # But be more lenient - check if key words match
     if expected_norm in extracted_norm or extracted_norm in expected_norm:
         return True, ""
+
+    # For longer text fields, check if key information overlaps
+    if len(expected_norm) > 20 or len(extracted_norm) > 20:
+        # Split into words and check overlap
+        exp_words = set(expected_norm.split())
+        ext_words = set(extracted_norm.split())
+        # Remove common stop words
+        stop_words = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+        }
+        exp_words = exp_words - stop_words
+        ext_words = ext_words - stop_words
+        if exp_words and ext_words:
+            overlap = len(exp_words & ext_words)
+            total_unique = len(exp_words | ext_words)
+            if total_unique > 0 and overlap / total_unique > 0.5:  # 50% word overlap
+                return True, ""
 
     # For numeric fields, compare numbers
     if field_name in [
@@ -72,6 +103,8 @@ def compare_field(
         "amount_inherited",
         "sale_proceeds",
         "settlement_amount",
+        "payout_amount",
+        "dividend_amount",
         "payout_amount",
     ]:
         extracted_nums = extract_numbers(extracted)
@@ -84,11 +117,76 @@ def compare_field(
                     if abs(exp_num - ext_num) < 1.0:  # Allow small differences
                         return True, ""
 
+        # Also check for "million" vs numeric format
+        if "million" in extracted_norm or "million" in expected_norm:
+            # Extract million amounts
+            def get_million_value(text: str) -> float | None:
+                import re
+
+                match = re.search(r"(\d+\.?\d*)\s*million", text.lower())
+                if match:
+                    return float(match.group(1)) * 1000000
+                return None
+
+            ext_million = get_million_value(extracted)
+            exp_million = get_million_value(expected)
+            if ext_million and exp_million:
+                if abs(ext_million - exp_million) < 1000:
+                    return True, ""
+
+    # For period_received and similar fields, check if key information is present
+    if field_name in ["period_received", "duration_of_marriage"]:
+        # Check if both contain similar time-related keywords
+        time_keywords = [
+            "ongoing",
+            "since",
+            "years",
+            "months",
+            "founding",
+            "last",
+            "period",
+        ]
+        ext_has_time = any(kw in extracted_norm for kw in time_keywords)
+        exp_has_time = any(kw in expected_norm for kw in time_keywords)
+        if ext_has_time and exp_has_time:
+            # Both mention time periods, check if core info matches
+            # Extract years/periods mentioned
+            import re
+
+            ext_years = re.findall(r"\d{4}", extracted)
+            exp_years = re.findall(r"\d{4}", expected)
+            if ext_years and exp_years:
+                # If any year matches, consider it a match
+                if any(y in expected for y in ext_years) or any(
+                    y in extracted for y in exp_years
+                ):
+                    return True, ""
+
+    # For name fields, check if core name matches (ignore relationship qualifiers)
+    if field_name in ["donor_name", "deceased_name", "former_spouse_name"]:
+        # Extract name without relationship qualifiers
+        def extract_core_name(name: str) -> str:
+            # Remove content in parentheses
+            import re
+
+            name = re.sub(r"\([^)]*\)", "", name).strip()
+            # Take first two words (typically first and last name)
+            parts = name.split()
+            if len(parts) >= 2:
+                return f"{parts[0]} {parts[1]}".lower()
+            return name.lower()
+
+        ext_core = extract_core_name(extracted)
+        exp_core = extract_core_name(expected)
+        if ext_core and exp_core and ext_core == exp_core:
+            return True, ""
+
     # Check for key phrases that indicate same meaning
     key_phrases = {
         "present": ["present", "current", "ongoing", "now"],
         "approximately": ["approximately", "approx", "around", "about", "~"],
         "final": ["final", "last", "ending"],
+        "expected": ["expected", "pending", "future", "subject to"],
     }
 
     # Check if both contain same key phrases

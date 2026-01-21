@@ -1,4 +1,7 @@
-"""Tests for Pydantic schema models."""
+"""Tests for Pydantic schema models.
+
+pytest tests/test_schemas.py -v
+"""
 
 import pytest
 from pydantic import ValidationError

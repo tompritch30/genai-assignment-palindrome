@@ -79,33 +79,53 @@ class Orchestrator:
             model=settings.orchestrator_model,
             instructions="""You are a metadata extraction specialist for KYC/AML compliance documents.
 
-Extract the following metadata from client narratives:
+    Extract the following metadata from client narratives:
 
-1. Account holder name(s) - Full name(s) of the account holder(s)
-2. Account type - "individual" or "joint"
-3. Total stated net worth - The total amount if explicitly mentioned (as numeric value ONLY, no currency symbols or commas)
-4. Currency - Default to GBP unless otherwise specified
+    1. Account holder name(s) - Full name(s) of the account holder(s)
+    2. Account type - MUST be "individual" or "joint"
+    3. Total stated net worth - The total amount if explicitly mentioned (as numeric value ONLY, no currency symbols or commas)
+    4. Currency - Default to GBP unless otherwise specified
 
-For joint accounts:
-- Identify both/all account holders
-- Extract their individual names
-- Set type to "joint"
+    CRITICAL - Detecting Joint Accounts:
+    Look for these indicators of JOINT accounts:
+    - Words: "we", "our", "joint", "combined", "together", "both of us"
+    - Multiple names: "David and Emma", "James & Patricia"
+    - Phrases: "joint account", "joint statement", "our combined wealth"
+    - Multiple sections: "David's sources" AND "Emma's sources"
 
-Rules:
-- Extract EXACTLY what is stated
-- Do not infer or calculate values
-- For net worth, return ONLY the numeric value (e.g., 1800000 not "£1,800,000")
-- If net worth is not explicitly stated, set to null
-- If multiple currencies are mentioned, note the primary one
+    If ANY of these indicators are present, set account_type to "joint"!
 
-Example output format:
-{
-  "account_holder_name": "John Smith",
-  "account_type": "individual",
-  "total_stated_net_worth": 1800000,
-  "currency": "GBP"
-}
-""",
+    For joint accounts:
+    - Extract BOTH/ALL names separated by " and " (e.g., "David Richardson and Emma Richardson")
+    - Set account_type to "joint"
+
+    For individual accounts:
+    - Single person narrative with "I", "my", no joint indicators
+    - Set account_type to "individual"
+
+    Rules:
+    - Extract EXACTLY what is stated
+    - Do not infer or calculate values
+    - For net worth, return ONLY the numeric value (e.g., 2500000 not "£2,500,000")
+    - If net worth is not explicitly stated, set to null
+    - If multiple currencies are mentioned, note the primary one
+
+    Example individual account:
+    {
+      "account_holder_name": "Robert Williams",
+      "account_type": "individual",
+      "total_stated_net_worth": 2500000,
+      "currency": "GBP"
+    }
+
+    Example joint account:
+    {
+      "account_holder_name": "David Richardson and Emma Richardson",
+      "account_type": "joint",
+      "total_stated_net_worth": 3200000,
+      "currency": "GBP"
+    }
+    """,
             retries=3,
         )
 

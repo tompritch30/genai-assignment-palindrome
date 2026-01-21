@@ -295,9 +295,15 @@ def calculate_completeness(
     try:
         # Get required fields for this source type
         required_fields = knowledge_base.get_required_fields(source_type.value)
-    except Exception:
-        # If knowledge base fails, return default
-        return 0.0, []
+    except Exception as e:
+        # If knowledge base fails, return incomplete with explanation
+        return 0.0, [
+            MissingField(
+                field_name="knowledge_base_error",
+                reason=f"Could not determine required fields: {str(e)}",
+                partially_answered=False,
+            )
+        ]
 
     total_fields = len(required_fields)
     if total_fields == 0:
@@ -322,6 +328,17 @@ def calculate_completeness(
             )
 
     completeness_score = present_fields / total_fields if total_fields > 0 else 0.0
+
+    # Defensive check: if incomplete, ensure we have missing fields listed
+    if completeness_score < 1.0 and len(missing_fields) == 0:
+        # This shouldn't happen, but add a fallback
+        missing_fields.append(
+            MissingField(
+                field_name="unknown",
+                reason=f"Incomplete extraction ({present_fields}/{total_fields} fields) but specific missing fields not identified",
+                partially_answered=False,
+            )
+        )
 
     return completeness_score, missing_fields
 

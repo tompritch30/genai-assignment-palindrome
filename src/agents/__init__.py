@@ -12,6 +12,7 @@ from src.agents.business_sale_agent import SaleOfBusinessAgent
 from src.agents.asset_sale_agent import SaleOfAssetAgent
 from src.agents.lottery_agent import LotteryWinningsAgent
 from src.agents.insurance_agent import InsurancePayoutAgent
+from src.agents.followup_agent import FollowUpQuestionAgent
 from src.agents.orchestrator import Orchestrator
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "SaleOfAssetAgent",
     "LotteryWinningsAgent",
     "InsurancePayoutAgent",
+    "FollowUpQuestionAgent",
     "Orchestrator",
 ]

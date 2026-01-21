@@ -8,6 +8,10 @@ from src.agents.business_dividends_agent import BusinessDividendsAgent
 from src.agents.gift_agent import GiftAgent
 from src.agents.inheritance_agent import InheritanceAgent
 from src.agents.divorce_agent import DivorceSettlementAgent
+from src.agents.business_sale_agent import SaleOfBusinessAgent
+from src.agents.asset_sale_agent import SaleOfAssetAgent
+from src.agents.lottery_agent import LotteryWinningsAgent
+from src.agents.insurance_agent import InsurancePayoutAgent
 
 __all__ = [
     "BaseExtractionAgent",
@@ -18,4 +22,8 @@ __all__ = [
     "GiftAgent",
     "InheritanceAgent",
     "DivorceSettlementAgent",
+    "SaleOfBusinessAgent",
+    "SaleOfAssetAgent",
+    "LotteryWinningsAgent",
+    "InsurancePayoutAgent",
 ]

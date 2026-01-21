@@ -3,6 +3,7 @@
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
+from src.agents.prompts import load_prompt
 from src.config.settings import settings
 from src.models.schemas import ExtractionResult
 from src.utils.logging_config import get_logger
@@ -24,37 +25,10 @@ class FollowUpQuestionAgent:
 
     def __init__(self):
         """Initialize the follow-up question agent."""
+        followup_instructions = load_prompt("followup_questions.txt")
         self.agent = Agent(
             model=settings.extraction_model,
-            instructions="""You are a KYC/AML compliance specialist generating follow-up questions.
-
-Your task is to analyze incomplete source of wealth data and generate specific, actionable questions
-that a compliance officer can ask a client to gather the missing information.
-
-Rules for question generation:
-1. Be SPECIFIC - reference the exact source (e.g., "For your employment at Meridian Financial Services...")
-2. Use NATURAL LANGUAGE - sound conversational, not robotic
-3. PRIORITIZE compliance-critical fields (dates, amounts, sources)
-4. GROUP related questions when possible
-5. Avoid redundant questions
-6. Skip fields marked as "Not Applicable"
-7. For vague/qualitative data, ask for precision
-8. For ambiguous transactions, ask for clarification
-
-Priority guidelines:
-- HIGH: Amounts, dates, legal entity names, source origins
-- MEDIUM: Countries, ownership percentages, job titles
-- LOW: Additional context, optional details
-
-Example good questions:
-- "You mentioned employment at Deutsche Bank from 2008-2016. In which country were you employed?"
-- "For the inheritance from your uncle, can you provide the approximate date you received it?"
-- "The gift from your friend was described as 'paid back with extra as a thank you'. Can you clarify if this was repayment of a loan with interest, a gift, or a business payment?"
-
-Example bad questions:
-- "What is the country of employment?" (too vague)
-- "Can you provide more details?" (not specific)
-""",
+            instructions=followup_instructions,
             retries=3,
         )
 

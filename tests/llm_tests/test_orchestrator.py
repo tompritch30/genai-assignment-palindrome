@@ -168,7 +168,7 @@ async def test_case_07_multiple_properties():
 
 @pytest.mark.asyncio
 async def test_case_08_joint_account():
-    """Test Case 08 (joint account attribution)."""
+    """Test Case 08 (joint account - full orchestrator integration)."""
     doc_path = Path("training_data/case_08_joint_account/input_narrative.docx")
     expected_path = Path("training_data/case_08_joint_account/expected_output.json")
 
@@ -182,33 +182,10 @@ async def test_case_08_joint_account():
     with open(expected_path, "r", encoding="utf-8") as f:
         expected = json.load(f)
 
-    # Compare metadata - account type
-    assert (
-        result.metadata.account_holder.type.value
-        == expected["metadata"]["account_holder"]["type"]
-    ), (
-        f"Account type mismatch: expected '{expected['metadata']['account_holder']['type']}', got '{result.metadata.account_holder.type.value}'"
+    # Verify joint account type (detailed metadata tests in test_metadata_agent.py)
+    assert result.metadata.account_holder.type.value == "joint", (
+        f"Expected joint account, got {result.metadata.account_holder.type.value}"
     )
-
-    # Compare account holder name (flexible)
-    from tests.llm_tests.field_comparison import compare_field
-
-    name_matches, _ = compare_field(
-        result.metadata.account_holder.name,
-        expected["metadata"]["account_holder"]["name"],
-        "account_holder_name",
-    )
-    if not name_matches:
-        print(
-            f"  Note: Account holder name differs - expected '{expected['metadata']['account_holder']['name']}', got '{result.metadata.account_holder.name}'"
-        )
-
-    # Should have holders information
-    if result.metadata.account_holder.holders:
-        expected_holders_count = len(expected["metadata"]["account_holder"]["holders"])
-        assert len(result.metadata.account_holder.holders) == expected_holders_count, (
-            f"Holder count mismatch: expected {expected_holders_count}, got {len(result.metadata.account_holder.holders)}"
-        )
 
     # Compare source count
     assert (
@@ -218,11 +195,9 @@ async def test_case_08_joint_account():
         f"Source count mismatch: expected {expected['summary']['total_sources_identified']}, got {result.summary.total_sources_identified}"
     )
 
-    print("\n[PASS] Case 08: Joint account detected and validated")
-    print(f"  Account holder: {result.metadata.account_holder.name}")
+    print("\n[PASS] Joint account case processed successfully")
+    print(f"  Account: {result.metadata.account_holder.name}")
     print(f"  Type: {result.metadata.account_holder.type.value}")
-    if result.metadata.account_holder.holders:
-        print(f"  Holders: {len(result.metadata.account_holder.holders)}")
     print(f"  Sources: {result.summary.total_sources_identified}")
 
 
@@ -264,27 +239,6 @@ async def test_completeness_calculation():
     print(
         f"  Sources with missing fields: {result.summary.sources_with_missing_fields}"
     )
-
-
-@pytest.mark.asyncio
-async def test_metadata_extraction():
-    """Test metadata extraction."""
-    doc_path = Path("training_data/case_01_employment_simple/input_narrative.docx")
-    narrative = DocumentLoader.load_from_file(doc_path)
-
-    orchestrator = Orchestrator()
-    metadata = await orchestrator.extract_metadata(narrative)
-
-    # Metadata should be extracted
-    assert metadata.account_holder.name, "Account holder name should be extracted"
-    assert metadata.account_holder.type, "Account type should be extracted"
-    assert metadata.currency, "Currency should be set (default or extracted)"
-
-    print("\n[PASS] Metadata extracted successfully")
-    print(f"  Account holder: {metadata.account_holder.name}")
-    print(f"  Account type: {metadata.account_holder.type.value}")
-    print(f"  Currency: {metadata.currency}")
-    print(f"  Net worth: {metadata.total_stated_net_worth}")
 
 
 @pytest.mark.asyncio
@@ -402,7 +356,6 @@ if __name__ == "__main__":
         print("Running orchestrator tests...\n")
 
         await test_case_01_end_to_end()
-        await test_metadata_extraction()
         await test_parallel_agent_dispatch()
         await test_completeness_calculation()
         await test_source_id_assignment()

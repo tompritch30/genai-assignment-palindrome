@@ -3,15 +3,6 @@
 import asyncio
 from typing import Any
 
-from pydantic_ai import Agent
-from pydantic_ai.exceptions import ModelHTTPError
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
-
 from src.agents.asset_sale_agent import SaleOfAssetAgent
 from src.agents.business_dividends_agent import BusinessDividendsAgent
 from src.agents.business_income_agent import BusinessIncomeAgent
@@ -23,8 +14,8 @@ from src.agents.gift_agent import GiftAgent
 from src.agents.inheritance_agent import InheritanceAgent
 from src.agents.insurance_agent import InsurancePayoutAgent
 from src.agents.lottery_agent import LotteryWinningsAgent
+from src.agents.metadata_agent import MetadataAgent
 from src.agents.property_agent import PropertySaleAgent
-from src.config.settings import settings
 from src.knowledge.sow_knowledge import get_knowledge_base
 from src.models.schemas import (
     AccountHolder,
@@ -42,7 +33,6 @@ from src.utils.sow_utils import (
     detect_compliance_flags,
     detect_overlapping_sources,
     generate_description,
-    parse_net_worth,
 )
 
 logger = get_logger(__name__)
@@ -71,68 +61,16 @@ class Orchestrator:
         # Load knowledge base for completeness calculations
         self.knowledge_base = get_knowledge_base()
 
+        # Initialize metadata extraction agent
+        self.metadata_agent = MetadataAgent()
+
         # Initialize follow-up question agent
         self.followup_agent = FollowUpQuestionAgent()
-
-        # Create metadata extraction agent
-        self.metadata_agent = Agent(
-            model=settings.orchestrator_model,
-            instructions="""You are a metadata extraction specialist for KYC/AML compliance documents.
-
-    Extract the following metadata from client narratives:
-
-    1. Account holder name(s) - Full name(s) of the account holder(s)
-    2. Account type - MUST be "individual" or "joint"
-    3. Total stated net worth - The total amount if explicitly mentioned (as numeric value ONLY, no currency symbols or commas)
-    4. Currency - Default to GBP unless otherwise specified
-
-    CRITICAL - Detecting Joint Accounts:
-    Look for these indicators of JOINT accounts:
-    - Words: "we", "our", "joint", "combined", "together", "both of us"
-    - Multiple names: "David and Emma", "James & Patricia"
-    - Phrases: "joint account", "joint statement", "our combined wealth"
-    - Multiple sections: "David's sources" AND "Emma's sources"
-
-    If ANY of these indicators are present, set account_type to "joint"!
-
-    For joint accounts:
-    - Extract BOTH/ALL names separated by " and " (e.g., "David Richardson and Emma Richardson")
-    - Set account_type to "joint"
-
-    For individual accounts:
-    - Single person narrative with "I", "my", no joint indicators
-    - Set account_type to "individual"
-
-    Rules:
-    - Extract EXACTLY what is stated
-    - Do not infer or calculate values
-    - For net worth, return ONLY the numeric value (e.g., 2500000 not "£2,500,000")
-    - If net worth is not explicitly stated, set to null
-    - If multiple currencies are mentioned, note the primary one
-
-    Example individual account:
-    {
-      "account_holder_name": "Robert Williams",
-      "account_type": "individual",
-      "total_stated_net_worth": 2500000,
-      "currency": "GBP"
-    }
-
-    Example joint account:
-    {
-      "account_holder_name": "David Richardson and Emma Richardson",
-      "account_type": "joint",
-      "total_stated_net_worth": 3200000,
-      "currency": "GBP"
-    }
-    """,
-            retries=3,
-        )
 
         logger.info("Orchestrator initialized successfully")
 
     async def extract_metadata(self, narrative: str) -> ExtractionMetadata:
-        """Extract metadata from narrative with retry on rate limits.
+        """Extract metadata from narrative.
 
         Args:
             narrative: Client narrative text
@@ -142,83 +80,38 @@ class Orchestrator:
         """
         logger.info("Extracting metadata...")
 
-        @retry(
-            stop=stop_after_attempt(3),
-            wait=wait_exponential(multiplier=2, min=4, max=30),
-            retry=retry_if_exception_type(ModelHTTPError),
-        )
-        async def _extract_with_retry():
-            """Inner function with retry logic."""
-            model_settings = (
-                {"max_completion_tokens": settings.reasoning_max_completion_tokens}
-                if "o1" in settings.orchestrator_model
-                or "o3" in settings.orchestrator_model
-                else {
-                    "temperature": 0.1,
-                    "max_tokens": 2048,
-                    "seed": 42,
-                }
-            )
-
-            result = await self.metadata_agent.run(
-                narrative,
-                output_type=dict,
-                model_settings=model_settings,
-            )
-            return result.output
-
         try:
-            metadata_dict = await _extract_with_retry()
+            # Use the dedicated metadata agent (has built-in retry logic)
+            metadata_fields = await self.metadata_agent.extract_metadata(narrative)
 
-        except Exception as e:
-            logger.error(f"Error extracting metadata after retries: {e}", exc_info=True)
-            # Return default metadata on error
-            return ExtractionMetadata(
-                account_holder=AccountHolder(
-                    name="Unknown",
-                    type=AccountType.INDIVIDUAL,
-                ),
-                total_stated_net_worth=None,
-                currency="GBP",
-            )
-
-        # Construct AccountHolder from extracted metadata
-        try:
-            account_type_str = metadata_dict.get("account_type", "individual")
+            # Convert to ExtractionMetadata format
             account_type = (
                 AccountType.JOINT
-                if account_type_str.lower() == "joint"
+                if metadata_fields.account_type.lower() == "joint"
                 else AccountType.INDIVIDUAL
             )
 
             # Handle joint account holders
             holders = None
             if account_type == AccountType.JOINT:
-                holders_data = metadata_dict.get("holders", [])
-                if isinstance(holders_data, list) and holders_data:
-                    holders = holders_data
-                else:
-                    # Try to extract from name if it contains "and"
-                    name = metadata_dict.get("account_holder_name", "")
-                    if " and " in name.lower():
-                        names = [n.strip() for n in name.split(" and ")]
-                        holders = [{"name": n, "role": "Joint Holder"} for n in names]
+                # Try to extract from name if it contains "and"
+                if " and " in metadata_fields.account_holder_name.lower():
+                    names = [
+                        n.strip()
+                        for n in metadata_fields.account_holder_name.split(" and ")
+                    ]
+                    holders = [{"name": n, "role": "Joint Holder"} for n in names]
 
             account_holder = AccountHolder(
-                name=metadata_dict.get("account_holder_name", "Unknown"),
+                name=metadata_fields.account_holder_name,
                 type=account_type,
                 holders=holders,
             )
 
-            # Parse net worth (handle string formats like "£1,800,000")
-            net_worth_raw = metadata_dict.get("total_stated_net_worth")
-            net_worth = parse_net_worth(net_worth_raw)
-
             metadata = ExtractionMetadata(
-                case_id=metadata_dict.get("case_id"),
                 account_holder=account_holder,
-                total_stated_net_worth=net_worth,
-                currency=metadata_dict.get("currency", "GBP"),
+                total_stated_net_worth=metadata_fields.total_stated_net_worth,
+                currency=metadata_fields.currency,
             )
 
             logger.info(
@@ -230,8 +123,8 @@ class Orchestrator:
             return metadata
 
         except Exception as e:
-            logger.error(f"Error parsing metadata dict: {e}", exc_info=True)
-            # Return default metadata on parsing error
+            logger.error(f"Error extracting metadata: {e}", exc_info=True)
+            # Return default metadata on error
             return ExtractionMetadata(
                 account_holder=AccountHolder(
                     name="Unknown",

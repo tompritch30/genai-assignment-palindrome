@@ -10,7 +10,6 @@ from pydantic_ai import Agent
 from src.config.settings import settings
 from src.utils.logging_config import setup_logging, get_logger
 
-# Setup logging
 setup_logging()
 logger = get_logger(__name__)
 

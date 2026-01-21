@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import insurance_agent as config
 from src.models.schemas import InsurancePayoutFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class InsurancePayoutAgent(BaseExtractionAgent):
         """Initialize insurance payout extraction agent."""
         instructions = load_prompt("insurance_payout.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[InsurancePayoutFields],
             instructions=instructions,
         )

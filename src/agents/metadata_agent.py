@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
-from src.config.settings import settings
+from src.config.agent_configs import metadata_agent as config
 from src.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ class MetadataAgent(BaseExtractionAgent):
         """Initialize metadata extraction agent."""
         instructions = load_prompt("metadata_extraction.txt")
         super().__init__(
-            model=settings.orchestrator_model,  # Use orchestrator model
+            config=config,
             result_type=MetadataFields,
             instructions=instructions,
         )

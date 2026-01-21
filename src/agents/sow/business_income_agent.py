@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import business_income_agent as config
 from src.models.schemas import BusinessIncomeFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class BusinessIncomeAgent(BaseExtractionAgent):
         """Initialize business income extraction agent."""
         instructions = load_prompt("business_income.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[BusinessIncomeFields],
             instructions=instructions,
         )

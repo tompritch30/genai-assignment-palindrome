@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import employment_agent as config
 from src.models.schemas import EmploymentIncomeFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class EmploymentIncomeAgent(BaseExtractionAgent):
         """Initialize employment income extraction agent."""
         instructions = load_prompt("employment_income.txt")
         super().__init__(
-            model=None,  # Use default extraction_model (gpt-4o)
+            config=config,
             result_type=list[EmploymentIncomeFields],
             instructions=instructions,
         )

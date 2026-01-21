@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import business_sale_agent as config
 from src.models.schemas import SaleOfBusinessFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class SaleOfBusinessAgent(BaseExtractionAgent):
         """Initialize sale of business extraction agent."""
         instructions = load_prompt("business_sale.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[SaleOfBusinessFields],
             instructions=instructions,
         )

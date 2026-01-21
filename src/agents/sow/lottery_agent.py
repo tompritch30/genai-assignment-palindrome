@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import lottery_agent as config
 from src.models.schemas import LotteryWinningsFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class LotteryWinningsAgent(BaseExtractionAgent):
         """Initialize lottery winnings extraction agent."""
         instructions = load_prompt("lottery_winnings.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[LotteryWinningsFields],
             instructions=instructions,
         )

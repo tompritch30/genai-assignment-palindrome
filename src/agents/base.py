@@ -12,7 +12,7 @@ from tenacity import (
     retry_if_exception_type,
 )
 
-from src.config.settings import settings
+from src.config.agent_configs import AgentConfig
 from src.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -21,22 +21,25 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class BaseExtractionAgent:
-    """Base class for SOW extraction agents."""
+    """Base class for SOW extraction agents.
+
+    Uses AgentConfig for explicit configuration of model, temperature, retries, etc.
+    """
 
     def __init__(
         self,
-        model: str | None = None,
+        config: AgentConfig,
         result_type: type[T] | None = None,
         instructions: str = "",
     ):
         """Initialize base extraction agent.
 
         Args:
-            model: Model identifier (defaults to extraction_model from settings)
+            config: Agent configuration (model, temperature, max_tokens, retries, seed)
             result_type: Pydantic model type for structured output
             instructions: Agent instructions/prompt
         """
-        self.model = model or settings.extraction_model
+        self.config = config
         self.result_type = result_type
         self.instructions = instructions
         self._agent: Agent | None = None
@@ -49,14 +52,13 @@ class BaseExtractionAgent:
         """
         if self._agent is None:
             # Create agent - pydantic-ai reads OPENAI_API_KEY from environment automatically
-            # Use instructions parameter for system prompt
             self._agent = Agent(
-                model=self.model,
+                model=self.config.model,
                 instructions=self.instructions,
-                retries=3,  # Retry on failures
+                retries=self.config.retries,
             )
 
-            logger.info(f"Created agent with model: {self.model}")
+            logger.info(f"Created agent with model: {self.config.model}")
 
         return self._agent
 
@@ -82,18 +84,19 @@ class BaseExtractionAgent:
         agent = self._create_agent()
 
         # Determine model settings based on model type
-        if "o1" in self.model or "o3" in self.model:
-            # o-series models use max_completion_tokens
-            model_settings = {
-                "max_completion_tokens": settings.reasoning_max_completion_tokens
-            }
+        model_settings = {}
+
+        if "o1" in self.config.model or "o3" in self.config.model:
+            # o-series models don't support temperature/seed, use max_completion_tokens
+            if self.config.max_tokens:
+                model_settings["max_completion_tokens"] = self.config.max_tokens
         else:
-            # GPT models use temperature, max_tokens, seed
-            model_settings = {
-                "temperature": settings.extraction_temperature,
-                "max_tokens": settings.extraction_max_tokens,
-                "seed": settings.extraction_seed,
-            }
+            # GPT models support temperature, max_tokens, seed
+            model_settings["temperature"] = self.config.temperature
+            if self.config.max_tokens:
+                model_settings["max_tokens"] = self.config.max_tokens
+            if self.config.seed is not None:
+                model_settings["seed"] = self.config.seed
 
         try:
             # Use output_type in run() call (matches llm_connection.py pattern)

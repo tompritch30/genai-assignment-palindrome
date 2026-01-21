@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import business_dividends_agent as config
 from src.models.schemas import BusinessDividendsFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class BusinessDividendsAgent(BaseExtractionAgent):
         """Initialize business dividends extraction agent."""
         instructions = load_prompt("business_dividends.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[BusinessDividendsFields],
             instructions=instructions,
         )

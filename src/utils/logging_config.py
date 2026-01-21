@@ -1,15 +1,16 @@
 """Logging configuration for the SOW extraction system."""
 
 import logging
+import os
 import sys
 from pathlib import Path
-
-from src.config.settings import settings
 
 
 def setup_logging() -> None:
     """Configure logging for the application."""
-    log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    # Get log level from environment variable or default to INFO
+    log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_level = getattr(logging, log_level_name, logging.INFO)
 
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")

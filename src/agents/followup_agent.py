@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 
 from src.agents.prompts import load_prompt
-from src.config.settings import settings
+from src.config.agent_configs import followup_agent as config
 from src.models.schemas import ExtractionResult
 from src.utils.logging_config import get_logger
 
@@ -27,10 +27,11 @@ class FollowUpQuestionAgent:
         """Initialize the follow-up question agent."""
         followup_instructions = load_prompt("followup_questions.txt")
         self.agent = Agent(
-            model=settings.extraction_model,
+            model=config.model,
             instructions=followup_instructions,
-            retries=3,
+            retries=config.retries,
         )
+        self.config = config
 
     async def generate_questions(
         self, extraction_result: ExtractionResult
@@ -53,16 +54,19 @@ class FollowUpQuestionAgent:
         # Build context for question generation
         context = self._build_question_context(extraction_result)
 
-        # Use LLM to generate questions
-        model_settings = (
-            {"max_completion_tokens": settings.reasoning_max_completion_tokens}
-            if "o1" in settings.extraction_model or "o3" in settings.extraction_model
-            else {
-                "temperature": 0.3,
-                "max_tokens": 4096,
-                "seed": 42,
-            }
-        )
+        # Use LLM to generate questions with config-based settings
+        model_settings = {}
+        if "o1" in self.config.model or "o3" in self.config.model:
+            # o-series models don't support temperature/seed
+            if self.config.max_tokens:
+                model_settings["max_completion_tokens"] = self.config.max_tokens
+        else:
+            # GPT models support temperature, max_tokens, seed
+            model_settings["temperature"] = self.config.temperature
+            if self.config.max_tokens:
+                model_settings["max_tokens"] = self.config.max_tokens
+            if self.config.seed is not None:
+                model_settings["seed"] = self.config.seed
 
         try:
             result = await self.agent.run(

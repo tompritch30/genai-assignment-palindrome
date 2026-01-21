@@ -14,7 +14,8 @@ class TestEmploymentIncomeAgent:
         """Test that agent initializes correctly."""
         agent = EmploymentIncomeAgent()
         assert agent is not None
-        assert agent.model is not None
+        assert agent.config is not None
+        assert agent.config.model is not None
         assert agent.result_type == list[EmploymentIncomeFields]
         assert len(agent.instructions) > 0
 

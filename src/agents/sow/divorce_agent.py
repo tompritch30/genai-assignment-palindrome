@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import divorce_agent as config
 from src.models.schemas import DivorceSettlementFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class DivorceSettlementAgent(BaseExtractionAgent):
         """Initialize divorce settlement extraction agent."""
         instructions = load_prompt("divorce_settlement.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[DivorceSettlementFields],
             instructions=instructions,
         )

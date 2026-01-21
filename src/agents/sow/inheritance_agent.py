@@ -2,6 +2,7 @@
 
 from src.agents.base import BaseExtractionAgent
 from src.agents.prompts import load_prompt
+from src.config.agent_configs import inheritance_agent as config
 from src.models.schemas import InheritanceFields
 from src.utils.logging_config import get_logger
 
@@ -15,7 +16,7 @@ class InheritanceAgent(BaseExtractionAgent):
         """Initialize inheritance extraction agent."""
         instructions = load_prompt("inheritance.txt")
         super().__init__(
-            model=None,
+            config=config,
             result_type=list[InheritanceFields],
             instructions=instructions,
         )

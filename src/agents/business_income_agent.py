@@ -1,0 +1,97 @@
+"""Business Income extraction agent."""
+
+from src.agents.base import BaseExtractionAgent
+from src.models.schemas import BusinessIncomeFields
+from src.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+class BusinessIncomeAgent(BaseExtractionAgent):
+    """Agent for extracting business income sources from narratives."""
+
+    def __init__(self):
+        """Initialize business income extraction agent."""
+        instructions = """
+You are a business income extraction specialist for KYC/AML compliance.
+
+Extract ALL business income mentioned in the narrative. This is ongoing income from owning/operating a business (salary, distributions, etc.).
+
+CRITICAL RULES:
+1. Extract EXACTLY what is stated - do NOT infer or calculate
+2. If vague, capture the LITERAL text
+3. Each distinct business is a separate entry
+4. Return empty list if no business income mentioned
+5. Set fields to null if not stated
+6. Do NOT create entries where ALL fields are null
+
+Note: Business income is different from business dividends. If same entity generates both, create separate entries.
+
+Return a list of BusinessIncomeFields objects, one for each business income source found.
+"""
+        super().__init__(
+            model=None,
+            result_type=list[BusinessIncomeFields],
+            instructions=instructions,
+        )
+
+    async def extract_business_income(
+        self, narrative: str
+    ) -> list[BusinessIncomeFields]:
+        """Extract all business income sources from narrative.
+
+        Args:
+            narrative: Client narrative text
+
+        Returns:
+            List of business income sources (may be empty)
+        """
+        logger.info("Extracting business income sources...")
+        result = await self.extract(narrative)
+
+        # Filter out entries where all fields are None
+        filtered = [
+            biz
+            for biz in result
+            if any(
+                [
+                    biz.business_name,
+                    biz.nature_of_business,
+                    biz.ownership_percentage,
+                    biz.annual_income_from_business,
+                    biz.ownership_start_date,
+                    biz.how_business_acquired,
+                ]
+            )
+        ]
+
+        logger.info(f"Extracted {len(filtered)} business income source(s)")
+        return filtered
+
+
+if __name__ == "__main__":
+    import asyncio
+    from pathlib import Path
+
+    from src.loaders.document_loader import DocumentLoader
+    from src.utils.logging_config import setup_logging
+
+    setup_logging()
+
+    async def main():
+        doc_path = Path(
+            "training_data/case_05_business_income_dividends/input_narrative.docx"
+        )
+        narrative = DocumentLoader.load_from_file(doc_path)
+        agent = BusinessIncomeAgent()
+        results = await agent.extract_business_income(narrative)
+
+        print(f"Found {len(results)} business income source(s):")
+        for i, biz in enumerate(results, 1):
+            print(f"\n{i}.")
+            print(f"  Business: {biz.business_name}")
+            print(f"  Nature: {biz.nature_of_business}")
+            print(f"  Ownership: {biz.ownership_percentage}")
+            print(f"  Annual Income: {biz.annual_income_from_business}")
+
+    asyncio.run(main())

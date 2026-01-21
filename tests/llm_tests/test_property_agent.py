@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.agents.property_agent import PropertySaleAgent
+from src.agents.sow.property_agent import PropertySaleAgent
 from src.loaders.document_loader import DocumentLoader
 from src.utils.logging_config import setup_logging
 from tests.llm_tests.field_comparison import (

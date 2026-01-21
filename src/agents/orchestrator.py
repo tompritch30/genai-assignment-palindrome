@@ -3,19 +3,21 @@
 import asyncio
 from typing import Any
 
-from src.agents.asset_sale_agent import SaleOfAssetAgent
-from src.agents.business_dividends_agent import BusinessDividendsAgent
-from src.agents.business_income_agent import BusinessIncomeAgent
-from src.agents.business_sale_agent import SaleOfBusinessAgent
-from src.agents.divorce_agent import DivorceSettlementAgent
-from src.agents.employment_agent import EmploymentIncomeAgent
+from src.agents.sow import (
+    SaleOfAssetAgent,
+    BusinessDividendsAgent,
+    BusinessIncomeAgent,
+    SaleOfBusinessAgent,
+    DivorceSettlementAgent,
+    EmploymentIncomeAgent,
+    GiftAgent,
+    InheritanceAgent,
+    InsurancePayoutAgent,
+    LotteryWinningsAgent,
+    PropertySaleAgent,
+)
 from src.agents.followup_agent import FollowUpQuestionAgent
-from src.agents.gift_agent import GiftAgent
-from src.agents.inheritance_agent import InheritanceAgent
-from src.agents.insurance_agent import InsurancePayoutAgent
-from src.agents.lottery_agent import LotteryWinningsAgent
 from src.agents.metadata_agent import MetadataAgent
-from src.agents.property_agent import PropertySaleAgent
 from src.knowledge.sow_knowledge import get_knowledge_base
 from src.models.schemas import (
     AccountHolder,

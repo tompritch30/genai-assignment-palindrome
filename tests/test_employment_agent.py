@@ -3,7 +3,7 @@
 These tests verify the agent structure and configuration without making API calls.
 """
 
-from src.agents.employment_agent import EmploymentIncomeAgent
+from src.agents.sow.employment_agent import EmploymentIncomeAgent
 from src.models.schemas import EmploymentIncomeFields
 
 

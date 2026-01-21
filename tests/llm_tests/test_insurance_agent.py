@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.agents.insurance_agent import InsurancePayoutAgent
+from src.agents.sow.insurance_agent import InsurancePayoutAgent
 from src.loaders.document_loader import DocumentLoader
 from src.utils.logging_config import setup_logging
 from tests.llm_tests.field_comparison import (

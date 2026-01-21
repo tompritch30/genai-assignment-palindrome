@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from src.agents.business_income_agent import BusinessIncomeAgent
-from src.agents.business_dividends_agent import BusinessDividendsAgent
+from src.agents.sow.business_income_agent import BusinessIncomeAgent
+from src.agents.sow.business_dividends_agent import BusinessDividendsAgent
 from src.loaders.document_loader import DocumentLoader
 from src.utils.logging_config import setup_logging
 from tests.llm_tests.field_comparison import (

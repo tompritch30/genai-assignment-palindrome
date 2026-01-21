@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.agents.gift_agent import GiftAgent
+from src.agents.sow.gift_agent import GiftAgent
 from src.loaders.document_loader import DocumentLoader
 from src.utils.logging_config import setup_logging
 from tests.llm_tests.field_comparison import (

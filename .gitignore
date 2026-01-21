@@ -33,7 +33,11 @@ ENV/
 *.swo
 *~
 
-# Environment variables
+# Logs
+*.log
+logs/
+
+# Environment
 .env
 .env.local
 
@@ -42,12 +46,23 @@ ENV/
 .coverage
 htmlcov/
 .tox/
+
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MyPy
 .mypy_cache/
+.dmypy.json
+dmypy.json
+
 
 # Project specific
 PLAN.md
 *.log
+extraction_runs/
 
-# Outputs
-outputs/
-generated_outputs/

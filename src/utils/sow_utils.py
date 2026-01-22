@@ -210,7 +210,11 @@ def generate_description(
             return f"{policy_type} payout from {provider}"
         return f"Insurance payout from {provider}"
 
-    return source_type.value.replace("_", " ").title()
+    # Handle both SourceType enum and string
+    source_type_str = (
+        source_type.value if hasattr(source_type, "value") else source_type
+    )
+    return source_type_str.replace("_", " ").title()
 
 
 def detect_overlapping_sources(
@@ -294,7 +298,11 @@ def calculate_completeness(
 
     try:
         # Get required fields for this source type
-        required_fields = knowledge_base.get_required_fields(source_type.value)
+        # Handle both SourceType enum and string
+        source_type_str = (
+            source_type.value if hasattr(source_type, "value") else source_type
+        )
+        required_fields = knowledge_base.get_required_fields(source_type_str)
     except Exception as e:
         # If knowledge base fails, return incomplete with explanation
         return 0.0, [

@@ -58,6 +58,67 @@ class FieldStatus(str, Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class ExtractedField(BaseModel):
+    """Generic wrapper for ANY extracted field with evidence.
+
+    This provides per-field justification with source quotes for validation.
+    One class, reused for all fields across all 11 SOW schemas.
+    """
+
+    value: str | None = Field(
+        None, description="The extracted value, or None if not found/applicable"
+    )
+    status: FieldStatus = Field(
+        FieldStatus.NOT_STATED,
+        description="Whether field is populated, not stated, or not applicable",
+    )
+    source_quotes: list[str] = Field(
+        default_factory=list,
+        description="Verbatim quotes from narrative supporting this value",
+    )
+
+    @classmethod
+    def populated(cls, value: str, quotes: list[str] | None = None) -> "ExtractedField":
+        """Create a populated field with value and optional quotes."""
+        return cls(
+            value=value,
+            status=FieldStatus.POPULATED,
+            source_quotes=quotes or [],
+        )
+
+    @classmethod
+    def not_stated(cls) -> "ExtractedField":
+        """Create a field marked as not stated in the narrative."""
+        return cls(value=None, status=FieldStatus.NOT_STATED, source_quotes=[])
+
+    @classmethod
+    def not_applicable(cls, reason: str | None = None) -> "ExtractedField":
+        """Create a field marked as not applicable."""
+        return cls(
+            value=reason,
+            status=FieldStatus.NOT_APPLICABLE,
+            source_quotes=[],
+        )
+
+
+class ValidationIssue(BaseModel):
+    """Represents a potential issue found during deterministic validation.
+
+    Used to flag fields that need review by the LLM ValidationAgent.
+    """
+
+    source_id: str = Field(..., description="ID of the source with the issue")
+    field_name: str = Field(..., description="Name of the problematic field")
+    issue_type: str = Field(
+        ...,
+        description="Type of issue: missing_quote, hallucinated_quote, value_mismatch",
+    )
+    message: str | None = Field(None, description="Human-readable description of issue")
+    current_value: str | None = Field(
+        None, description="Current value of the field (if any)"
+    )
+
+
 class PaymentStatus(str, Enum):
     """Status of a payment for unrealized/contingent payments."""
 

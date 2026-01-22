@@ -74,7 +74,7 @@ LOADING_MESSAGES = [
 
 # Page configuration
 st.set_page_config(
-    page_title="Source of Wealth Extraction | Palindrome",
+    page_title="Palindrome Wealth Intelligence",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -1084,8 +1084,8 @@ def main():
     st.markdown(
         """
     <div class="main-header">
-        <h1>Wealth Documentation</h1>
-        <p>Upload a client narrative to begin</p>
+        <h1>Palindrome Wealth Intelligence</h1>
+        <p>Precision extraction for discerning wealth management</p>
     </div>
     """,
         unsafe_allow_html=True,

@@ -179,7 +179,7 @@ If the information isn't in the narrative, confirm it's not stated.
                 output_type=ValidationResult,
                 model_settings=model_settings,
             )
-            
+
             # Log reasoning for transparency
             validation_result = result.output
             logger.info(
@@ -189,10 +189,12 @@ If the information isn't in the narrative, confirm it's not stated.
             if validation_result.reasoning:
                 logger.info(f"  Reasoning: {validation_result.reasoning}")
             if validation_result.source_quotes:
-                for quote in validation_result.source_quotes[:2]:  # Limit to first 2 quotes
+                for quote in validation_result.source_quotes[
+                    :2
+                ]:  # Limit to first 2 quotes
                     truncated = quote[:100] + "..." if len(quote) > 100 else quote
-                    logger.debug(f"  Quote: \"{truncated}\"")
-            
+                    logger.debug(f'  Quote: "{truncated}"')
+
             return validation_result
 
         except ModelHTTPError as e:

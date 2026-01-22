@@ -126,7 +126,7 @@ class ValidationIssue(BaseModel):
 
 class ToolCall(BaseModel):
     """Record of a single tool call made by the Field Search Agent.
-    
+
     Used for explainability - shows exactly what the agent searched for.
     """
 
@@ -137,7 +137,7 @@ class ToolCall(BaseModel):
 
 class SearchEvidence(BaseModel):
     """Complete evidence trail from an agentic field search.
-    
+
     Records all tool calls and the final decision for a single field search.
     """
 
@@ -153,7 +153,9 @@ class SearchEvidence(BaseModel):
         ...,
         description="Type of evidence: EXACT_MATCH, PARTIAL_MATCH, CONTEXTUAL, NO_EVIDENCE",
     )
-    reasoning: str = Field(..., description="Agent's reasoning about the search results")
+    reasoning: str = Field(
+        ..., description="Agent's reasoning about the search results"
+    )
 
 
 class PaymentStatus(str, Enum):

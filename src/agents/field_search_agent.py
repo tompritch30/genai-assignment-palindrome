@@ -12,7 +12,6 @@ Key features:
 
 import asyncio
 from dataclasses import dataclass, field as dataclass_field
-from typing import Any
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
@@ -48,14 +47,14 @@ logger = get_logger(__name__)
 @dataclass
 class SearchContext:
     """Dependencies passed to the field search agent via pydantic-ai deps.
-    
+
     This holds all the state needed during a search, including:
     - The narrative text to search
     - The search tools instance
     - Field information
     - Tool call tracking for evidence trail
     """
-    
+
     narrative: str
     search_tools: SearchTools
     field_name: str
@@ -63,7 +62,7 @@ class SearchContext:
     source_type: str
     tool_calls: list[ToolCall] = dataclass_field(default_factory=list)
     max_calls: int = 5
-    
+
     @property
     def calls_remaining(self) -> int:
         """Number of tool calls remaining before limit is reached."""
@@ -72,22 +71,21 @@ class SearchContext:
 
 class SearchResult(BaseModel):
     """Result from the field search agent.
-    
+
     The agent returns this after searching - it reports what it found
     (or confirms nothing was found) along with the type of evidence.
     """
-    
+
     found_value: str | None = Field(
-        None, 
-        description="The value found in the narrative, or None if not found"
+        None, description="The value found in the narrative, or None if not found"
     )
     evidence_type: str = Field(
         ...,
-        description="Type of evidence: EXACT_MATCH, PARTIAL_MATCH, CONTEXTUAL, or NO_EVIDENCE"
+        description="Type of evidence: EXACT_MATCH, PARTIAL_MATCH, CONTEXTUAL, or NO_EVIDENCE",
     )
     reasoning: str = Field(
         ...,
-        description="Step-by-step explanation of how you searched and what you found"
+        description="Step-by-step explanation of how you searched and what you found",
     )
 
 
@@ -184,26 +182,26 @@ CONCLUSION: Found employer name "Meridian Capital" with clear employment context
 
 class FieldSearchAgent:
     """Agentic search for finding field values in narratives.
-    
+
     This agent uses tool-based search to find missing or verify uncertain
     field values. The model decides which tools to call and when to stop.
     """
-    
+
     def __init__(self):
         """Initialize field search agent."""
         self._agent: Agent | None = None
         self._additional_guidance = self._load_additional_guidance()
-    
+
     def _load_additional_guidance(self) -> str:
         """Load additional guidance from prompt file if it exists."""
         try:
             return load_prompt("field_search.txt")
         except FileNotFoundError:
             return ""
-    
+
     def _create_agent(self) -> Agent:
         """Create and configure the pydantic-ai Agent with tools.
-        
+
         Returns:
             Configured Agent instance with search tools
         """
@@ -211,8 +209,10 @@ class FieldSearchAgent:
             # Combine base instructions with any additional guidance
             full_instructions = FIELD_SEARCH_INSTRUCTIONS
             if self._additional_guidance:
-                full_instructions += f"\n\n## ADDITIONAL GUIDANCE\n\n{self._additional_guidance}"
-            
+                full_instructions += (
+                    f"\n\n## ADDITIONAL GUIDANCE\n\n{self._additional_guidance}"
+                )
+
             self._agent = Agent(
                 model=config.model,
                 deps_type=SearchContext,
@@ -227,26 +227,26 @@ class FieldSearchAgent:
                 ],
             )
             logger.info(f"Created field search agent with model: {config.model}")
-        
+
         return self._agent
-    
+
     def _build_model_settings(self) -> dict:
         """Build model settings for o3-mini.
-        
+
         Returns:
             Dict with reasoning_effort and other settings
         """
         model_settings = {}
-        
+
         # o3-mini uses reasoning_effort instead of temperature
         if config.reasoning_effort:
             model_settings["reasoning_effort"] = config.reasoning_effort
-        
+
         if config.max_tokens:
             model_settings["max_completion_tokens"] = config.max_tokens
-        
+
         return model_settings
-    
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=2, min=4, max=30),
@@ -261,16 +261,16 @@ class FieldSearchAgent:
         current_value: str | None = None,
     ) -> tuple[SearchResult, SearchEvidence]:
         """Search narrative to find a field value.
-        
+
         The agent DECIDES which tools to call and when to stop.
         Maximum 5 tool calls per field.
-        
+
         Args:
             narrative: The text to search
             field_name: What field we're looking for (e.g., "employer_name")
             source_type: Context (e.g., "employment_income")
             current_value: If set, agent can confirm or correct it. If None, agent searches fresh.
-        
+
         Returns:
             Tuple of:
             - SearchResult with found_value (or None if not found)
@@ -278,11 +278,11 @@ class FieldSearchAgent:
         """
         agent = self._create_agent()
         model_settings = self._build_model_settings()
-        
+
         # Create search tools and context
         search_tools = SearchTools(narrative)
         tool_calls: list[ToolCall] = []
-        
+
         ctx = SearchContext(
             narrative=narrative,
             search_tools=search_tools,
@@ -292,7 +292,7 @@ class FieldSearchAgent:
             tool_calls=tool_calls,
             max_calls=5,
         )
-        
+
         # Build the prompt
         current_value_str = current_value if current_value else "NOT YET EXTRACTED"
         prompt = f"""## FIELD TO FIND
@@ -314,7 +314,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
 ## NARRATIVE
 {narrative[:3000]}{"..." if len(narrative) > 3000 else ""}
 """
-        
+
         try:
             result = await agent.run(
                 prompt,
@@ -322,9 +322,9 @@ You have {ctx.max_calls} tool calls available. Start searching!
                 output_type=SearchResult,
                 model_settings=model_settings,
             )
-            
+
             search_result = result.output
-            
+
             # Build evidence trail
             evidence = SearchEvidence(
                 field_name=field_name,
@@ -334,7 +334,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
                 evidence_type=search_result.evidence_type,
                 reasoning=search_result.reasoning,
             )
-            
+
             # Log detailed search results with reasoning
             logger.info(
                 f"Field search [{source_type}.{field_name}]: "
@@ -347,22 +347,24 @@ You have {ctx.max_calls} tool calls available. Start searching!
                 if len(search_result.reasoning) > 200:
                     reasoning_preview += "..."
                 logger.info(f"  Reasoning: {reasoning_preview}")
-            
+
             # Log tool call trail at debug level
             if tool_calls:
                 logger.debug(f"  Tool calls for {field_name}:")
                 for tc in tool_calls:
-                    logger.debug(f"    - {tc.tool_name}({tc.parameters}): {tc.result_summary}")
-            
+                    logger.debug(
+                        f"    - {tc.tool_name}({tc.parameters}): {tc.result_summary}"
+                    )
+
             return search_result, evidence
-            
+
         except ModelHTTPError as e:
             if e.status_code == 429:
                 logger.warning("Rate limit hit for field search agent, retrying...")
             raise
         except Exception as e:
             logger.error(f"Error searching for field {field_name}: {e}", exc_info=True)
-            
+
             # Return empty result on error
             error_result = SearchResult(
                 found_value=None,
@@ -378,7 +380,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
                 reasoning=f"Search failed: {str(e)}",
             )
             return error_result, error_evidence
-    
+
     async def search_missing_fields(
         self,
         narrative: str,
@@ -386,22 +388,22 @@ You have {ctx.max_calls} tool calls available. Start searching!
         missing_field_names: list[str],
     ) -> dict[str, tuple[SearchResult, SearchEvidence]]:
         """Search for multiple missing fields in parallel.
-        
+
         Args:
             narrative: The text to search
             source: The source of wealth with missing fields
             missing_field_names: List of field names to search for
-        
+
         Returns:
             Dict mapping field_name to (SearchResult, SearchEvidence) tuples
         """
         if not missing_field_names:
             return {}
-        
+
         logger.info(
             f"Searching for {len(missing_field_names)} missing fields in {source.source_id}..."
         )
-        
+
         # Create search tasks
         tasks = [
             self.search_field(
@@ -412,21 +414,21 @@ You have {ctx.max_calls} tool calls available. Start searching!
             )
             for field_name in missing_field_names
         ]
-        
+
         # Run searches in parallel
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Collect results
         field_results: dict[str, tuple[SearchResult, SearchEvidence]] = {}
-        
+
         for field_name, result in zip(missing_field_names, results):
             if isinstance(result, Exception):
                 logger.error(f"Search failed for {field_name}: {result}")
                 continue
-            
+
             search_result, evidence = result
             field_results[field_name] = (search_result, evidence)
-            
+
             if search_result.found_value:
                 logger.info(
                     f"Found {field_name}: {search_result.found_value} "
@@ -434,7 +436,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
                 )
             else:
                 logger.debug(f"Could not find {field_name}")
-        
+
         return field_results
 
 
@@ -445,25 +447,25 @@ You have {ctx.max_calls} tool calls available. Start searching!
 
 if __name__ == "__main__":
     from src.utils.logging_config import setup_logging
-    
+
     setup_logging()
-    
+
     async def main():
         """Test field search agent."""
         print("=" * 80)
         print("FIELD SEARCH AGENT TEST")
         print("=" * 80)
         print()
-        
+
         # Simple test narrative (uses fictional entities only)
         test_narrative = """
         Alex Turner has been working at Meridian Investment Bank as a Senior Risk Analyst 
         since January 2015. He earns approximately £92,000 per year in his role.
         The bank's headquarters are in Zurich, but Alex works in the Manchester office.
         """
-        
+
         agent = FieldSearchAgent()
-        
+
         # Test searching for employer_name
         print("Searching for employer_name...")
         result, evidence = await agent.search_field(
@@ -472,14 +474,14 @@ if __name__ == "__main__":
             source_type="employment_income",
             current_value=None,
         )
-        
-        print(f"\nResult:")
+
+        print("\nResult:")
         print(f"  Found Value: {result.found_value}")
         print(f"  Evidence Type: {result.evidence_type}")
         print(f"  Reasoning: {result.reasoning}")
-        print(f"\nEvidence Trail:")
+        print("\nEvidence Trail:")
         print(f"  Tool Calls: {evidence.total_calls}")
         for tc in evidence.tool_calls:
             print(f"    - {tc.tool_name}({tc.parameters}): {tc.result_summary}")
-    
+
     asyncio.run(main())

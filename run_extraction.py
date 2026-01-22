@@ -168,7 +168,7 @@ class ExtractionRunner:
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.run_dir = self.output_dir / f"run_{self.run_timestamp}"
         self.run_dir.mkdir(exist_ok=True)
-        
+
         # Add file logging to the run directory
         self._run_log_handler = add_run_file_handler(self.run_dir)
 
@@ -381,6 +381,26 @@ class ExtractionRunner:
                         "field": "total_stated_net_worth",
                         "expected": expected_worth,
                         "actual": actual_worth,
+                    }
+                )
+
+        # Compare currency
+        expected_currency = expected_meta.get("currency")
+        actual_currency = actual_meta.currency
+        if expected_currency is not None:
+            comparison["fields_compared"] += 1
+            if (
+                isinstance(actual_currency, str)
+                and isinstance(expected_currency, str)
+                and actual_currency.strip().lower() == expected_currency.strip().lower()
+            ):
+                comparison["fields_matched"] += 1
+            else:
+                comparison["differences"].append(
+                    {
+                        "field": "currency",
+                        "expected": expected_currency,
+                        "actual": actual_currency,
                     }
                 )
 
@@ -637,7 +657,10 @@ class ExtractionRunner:
         actual_fields = actual_source.extracted_fields
 
         field_comparison = {
-            "total_fields": len(expected_fields),
+            # Count only fields with a non-null expected value.
+            # If ground truth is null, we treat it as "unscorable" rather than
+            # penalizing the model for not extracting it.
+            "total_fields": 0,
             "matched_fields": 0,
             "matched_field_names": [],  # Which fields matched
             "missing_fields": [],  # Fields we didn't extract but should have
@@ -649,14 +672,32 @@ class ExtractionRunner:
         for field_name, expected_value in expected_fields.items():
             actual_value = actual_fields.get(field_name)
 
+            # If the expected value is null, the field isn't present in the ground truth.
+            # Don't score it as missing; optionally record a non-null extraction as extra.
+            if expected_value is None:
+                if actual_value is not None:
+                    field_comparison["extra_fields"].append(
+                        {
+                            "field": field_name,
+                            "expected": None,
+                            "actual": actual_value,
+                            "issue": "EXPECTED_NULL",
+                        }
+                    )
+                continue
+
+            field_comparison["total_fields"] += 1
+
             if actual_value is None:
                 # We didn't extract this field but should have
-                field_comparison["missing_fields"].append({
-                    "field": field_name,
-                    "expected": expected_value,
-                    "actual": None,
-                    "issue": "NOT_EXTRACTED"
-                })
+                field_comparison["missing_fields"].append(
+                    {
+                        "field": field_name,
+                        "expected": expected_value,
+                        "actual": None,
+                        "issue": "NOT_EXTRACTED",
+                    }
+                )
             elif self._values_match(actual_value, expected_value):
                 field_comparison["matched_fields"] += 1
                 field_comparison["matched_field_names"].append(field_name)
@@ -667,7 +708,7 @@ class ExtractionRunner:
                         "field": field_name,
                         "expected": expected_value,
                         "actual": actual_value,
-                        "issue": "VALUE_MISMATCH"
+                        "issue": "VALUE_MISMATCH",
                     }
                 )
                 # Mark for LLM evaluation
@@ -675,17 +716,18 @@ class ExtractionRunner:
                     field_comparison["pending_llm_eval"].append(
                         (field_name, str(expected_value), str(actual_value))
                     )
-        
+
         # Check for extra fields we extracted that weren't expected
         for field_name, actual_value in actual_fields.items():
             if field_name not in expected_fields and actual_value is not None:
-                expected_was_null = expected_fields.get(field_name) is None
-                field_comparison["extra_fields"].append({
-                    "field": field_name,
-                    "expected": None,
-                    "actual": actual_value,
-                    "issue": "EXTRA_EXTRACTION" if expected_was_null else "UNEXPECTED_FIELD"
-                })
+                field_comparison["extra_fields"].append(
+                    {
+                        "field": field_name,
+                        "expected": None,
+                        "actual": actual_value,
+                        "issue": "UNEXPECTED_FIELD",
+                    }
+                )
 
         if field_comparison["total_fields"] > 0:
             field_comparison["accuracy_rate"] = (
@@ -1068,6 +1110,13 @@ class ExtractionRunner:
             )
             f.write(f"- **Average Completeness**: {avg_completeness:.0%}\n\n")
 
+            f.write(
+                "_Completeness is the fraction of required fields (from the knowledge base) "
+                "that have a non-empty value. A lower completeness score often indicates the "
+                "narrative did not state certain required details, not necessarily that the model "
+                "made a mistake._\n\n"
+            )
+
             # Aggregate accuracy statistics
             self._write_aggregate_stats(f)
 
@@ -1138,15 +1187,26 @@ class ExtractionRunner:
                                 f"    - `{src_acc['source_type']}`: {acc_rate:.0%} ({acc['matched_fields']}/{acc['total_fields']} fields)\n"
                             )
 
+                            if src_acc.get("status") == "NOT_EXTRACTED":
+                                # Unmatched expected source: there is no predicted source instance to compare.
+                                expected_desc = src_acc.get("expected_description")
+                                if expected_desc:
+                                    f.write(
+                                        f"      - Source missing: Expected `{expected_desc}` but no matching extracted source was found\n"
+                                    )
+
                             if acc["missing_fields"]:
-                                # Extract field names (now list of dicts)
-                                missing_names = [
-                                    m["field"] if isinstance(m, dict) else m 
-                                    for m in acc["missing_fields"]
-                                ]
-                                f.write(
-                                    f"      - Missing: {', '.join(missing_names)}\n"
-                                )
+                                f.write("      - Missing:\n")
+                                for m in acc["missing_fields"]:
+                                    if isinstance(m, dict):
+                                        f.write(
+                                            f"        - `{m['field']}`: Expected `{m.get('expected')}`, Got `{m.get('actual')}`\n"
+                                        )
+                                    else:
+                                        # Unmatched-source case uses list[str] of missing field names.
+                                        f.write(
+                                            f"        - `{m}`: Expected `<present in ground truth>`, Got `None`\n"
+                                        )
 
                             if acc["incorrect_fields"]:
                                 f.write("      - Incorrect:\n")
@@ -1154,7 +1214,7 @@ class ExtractionRunner:
                                     f.write(
                                         f"        - `{inc['field']}`: Expected `{inc['expected']}`, Got `{inc['actual']}`\n"
                                     )
-                            
+
                             if acc.get("extra_fields"):
                                 f.write("      - Extra (unexpected):\n")
                                 for extra in acc["extra_fields"]:
@@ -1199,7 +1259,7 @@ class ExtractionRunner:
 
         logger.info(f"Run complete! Results saved to: {self.run_dir}")
         logger.info(f"Comparison report: {report_path}")
-        
+
         # Clean up run-specific file handler
         if self._run_log_handler:
             remove_run_file_handler(self._run_log_handler)

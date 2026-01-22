@@ -124,10 +124,10 @@ class FollowUpQuestionAgent:
         for source in extraction_result.sources_of_wealth:
             for missing in source.missing_fields:
                 # Skip error entries (these are bugs, not missing data)
-                if "error" in missing.field_name.lower():
+                if "error" in (missing.field_name or "").lower():
                     continue
                 # Skip not applicable fields
-                if "not applicable" in missing.reason.lower():
+                if "not applicable" in (missing.reason or "").lower():
                     continue
                 # Skip fields that are actually populated in extracted_fields
                 if source.extracted_fields.get(missing.field_name):
@@ -190,8 +190,8 @@ class FollowUpQuestionAgent:
             actual_missing = [
                 m
                 for m in source.missing_fields
-                if "error" not in m.field_name.lower()
-                and "not applicable" not in m.reason.lower()
+                if "error" not in (m.field_name or "").lower()
+                and "not applicable" not in (m.reason or "").lower()
                 and not source.extracted_fields.get(m.field_name)
             ]
 
@@ -200,18 +200,31 @@ class FollowUpQuestionAgent:
                 context_parts.append(f"Source {source.source_id}: {source.description}")
                 context_parts.append(f"  Type: {source.source_type}")
 
-                # Show extracted fields (DO NOT ASK ABOUT THESE)
-                context_parts.append("  ALREADY COMPLETE (do NOT ask about these):")
+                # Show extracted fields with full context (helps craft better questions)
+                context_parts.append(
+                    "  ALREADY COMPLETE (use this context to craft better questions, but do NOT ask about these):"
+                )
+                known_context = []
                 for field_name, value in source.extracted_fields.items():
                     if value:
-                        value_str = str(value)[:60]
+                        value_str = str(value)[:100]
                         context_parts.append(f"    - {field_name}: {value_str}")
+                        known_context.append(f"{field_name}={value_str}")
 
-                # Show ONLY the actual missing fields
-                context_parts.append("  MISSING (generate questions for these):")
+                if not known_context:
+                    context_parts.append("    (No fields extracted yet)")
+
+                # Show ONLY the actual missing fields with helpful context
+                context_parts.append(
+                    "  MISSING (generate questions for these - use known context above to make questions specific):"
+                )
                 for missing in actual_missing:
-                    context_parts.append(f"    - {missing.field_name}")
-                    context_parts.append(f"      Reason: {missing.reason}")
+                    field_readable = missing.field_name.replace("_", " ")
+                    context_parts.append(
+                        f"    - {missing.field_name} ({field_readable})"
+                    )
+                    if missing.reason and missing.reason != "Not stated in narrative":
+                        context_parts.append(f"      Note: {missing.reason}")
 
                 context_parts.append("")
 
@@ -247,26 +260,64 @@ class FollowUpQuestionAgent:
         """
         questions = []
 
+        # Field-specific question templates for more natural phrasing
+        question_templates = {
+            "employer_name": "Where were you employed?",
+            "job_title": "What was your job title?",
+            "employment_start_date": "When did you start this role?",
+            "employment_end_date": "When did this employment end?",
+            "annual_compensation": "What was your annual compensation?",
+            "country_of_employment": "Which country were you based in?",
+            "original_acquisition_date": "When did you originally acquire this?",
+            "original_acquisition_method": "How did you originally acquire this?",
+            "buyer_identity": "Who was the buyer?",
+            "sale_date": "When did the sale complete?",
+            "original_source_of_deceased_wealth": "How did they accumulate their wealth?",
+            "donor_source_of_wealth": "What is the source of their wealth?",
+            "relationship_to_donor": "What is your relationship to them?",
+        }
+
         for source in extraction_result.sources_of_wealth:
             if not source.missing_fields:
                 continue
 
             for missing in source.missing_fields[:2]:  # Limit per source
                 # Skip error entries
-                if "error" in missing.field_name.lower():
+                if "error" in (missing.field_name or "").lower():
                     continue
                 # Skip N/A fields
-                if "not applicable" in missing.reason.lower():
+                if "not applicable" in (missing.reason or "").lower():
                     continue
                 # Skip if field is actually populated
                 if source.extracted_fields.get(missing.field_name):
                     continue
 
-                # Format field name
-                field_readable = missing.field_name.replace("_", " ").title()
+                # Use template if available, otherwise generate generic
+                if missing.field_name in question_templates:
+                    base_question = question_templates[missing.field_name]
+                    # Add context from description
+                    desc = source.description
+                    if "employment" in source.source_type.lower():
+                        question = (
+                            f"Regarding your employment ({desc}): {base_question}"
+                        )
+                    elif "inheritance" in source.source_type.lower():
+                        question = (
+                            f"Regarding the inheritance ({desc}): {base_question}"
+                        )
+                    elif "gift" in source.source_type.lower():
+                        question = f"Regarding the gift ({desc}): {base_question}"
+                    elif "sale" in source.source_type.lower():
+                        question = f"Regarding the sale ({desc}): {base_question}"
+                    else:
+                        question = f"Regarding {desc}: {base_question}"
+                else:
+                    # Fallback to generic
+                    field_readable = missing.field_name.replace("_", " ")
+                    question = (
+                        f"Regarding {source.description}: What is the {field_readable}?"
+                    )
 
-                # Generate question
-                question = f"For {source.description}: What is the {field_readable}?"
                 questions.append(question)
 
         return questions[:10]

@@ -22,18 +22,19 @@ class BusinessDividendsAgent(BaseExtractionAgent):
         )
 
     async def extract_business_dividends(
-        self, narrative: str
+        self, narrative: str, context: dict | None = None
     ) -> list[BusinessDividendsFields]:
         """Extract all business dividends sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of business dividends sources (may be empty)
         """
         logger.info("Extracting business dividends sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

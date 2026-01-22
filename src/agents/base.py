@@ -24,6 +24,7 @@ class BaseExtractionAgent:
     """Base class for SOW extraction agents.
 
     Uses AgentConfig for explicit configuration of model, temperature, retries, etc.
+    Supports context passing for entity awareness (account holder info).
     """
 
     def __init__(
@@ -35,7 +36,7 @@ class BaseExtractionAgent:
         """Initialize base extraction agent.
 
         Args:
-            config: Agent configuration (model, temperature, max_tokens, retries, seed)
+            config: Agent configuration (model, temperature, max_tokens, retries, seed, reasoning_effort)
             result_type: Pydantic model type for structured output
             instructions: Agent instructions/prompt
         """
@@ -62,17 +63,69 @@ class BaseExtractionAgent:
 
         return self._agent
 
+    def _build_prompt_with_context(
+        self, narrative: str, context: dict | None = None
+    ) -> str:
+        """Build prompt with account holder context prepended.
+
+        Args:
+            narrative: The raw narrative text
+            context: Optional context dict with account_holder_name, account_type
+
+        Returns:
+            Prompt string with context header if provided
+        """
+        if not context:
+            return narrative
+
+        account_holder = context.get("account_holder_name", "Unknown")
+        account_type = context.get("account_type", "individual")
+
+        return f"""## CONTEXT
+Account Holder: {account_holder}
+Account Type: {account_type}
+
+## NARRATIVE
+{narrative}"""
+
+    def _build_model_settings(self) -> dict:
+        """Build model settings based on config and model type.
+
+        Returns:
+            Dict of model settings for pydantic-ai
+        """
+        model_settings = {}
+
+        if "o1" in self.config.model or "o3" in self.config.model:
+            # o-series models don't support temperature/seed
+            # Use max_completion_tokens and reasoning_effort
+            if self.config.max_tokens:
+                model_settings["max_completion_tokens"] = self.config.max_tokens
+            if self.config.reasoning_effort:
+                model_settings["reasoning_effort"] = self.config.reasoning_effort
+        else:
+            # GPT models support temperature, max_tokens, seed
+            model_settings["temperature"] = self.config.temperature
+            if self.config.max_tokens:
+                model_settings["max_tokens"] = self.config.max_tokens
+            if self.config.seed is not None:
+                model_settings["seed"] = self.config.seed
+
+        return model_settings
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=2, min=4, max=30),
         retry=retry_if_exception_type(ModelHTTPError),
         reraise=True,
     )
-    async def extract(self, narrative: str) -> T | list[T]:
+    async def extract(self, narrative: str, context: dict | None = None) -> T | list[T]:
         """Extract information from narrative text with retry on rate limits.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
+                     for entity awareness
 
         Returns:
             Extracted structured data (single instance or list)
@@ -83,25 +136,16 @@ class BaseExtractionAgent:
         """
         agent = self._create_agent()
 
-        # Determine model settings based on model type
-        model_settings = {}
+        # Build prompt with context if provided
+        prompt = self._build_prompt_with_context(narrative, context)
 
-        if "o1" in self.config.model or "o3" in self.config.model:
-            # o-series models don't support temperature/seed, use max_completion_tokens
-            if self.config.max_tokens:
-                model_settings["max_completion_tokens"] = self.config.max_tokens
-        else:
-            # GPT models support temperature, max_tokens, seed
-            model_settings["temperature"] = self.config.temperature
-            if self.config.max_tokens:
-                model_settings["max_tokens"] = self.config.max_tokens
-            if self.config.seed is not None:
-                model_settings["seed"] = self.config.seed
+        # Build model settings based on model type
+        model_settings = self._build_model_settings()
 
         try:
             # Use output_type in run() call (matches llm_connection.py pattern)
             result = await agent.run(
-                narrative,
+                prompt,
                 output_type=self.result_type,
                 model_settings=model_settings,
             )

@@ -22,18 +22,19 @@ class InsurancePayoutAgent(BaseExtractionAgent):
         )
 
     async def extract_insurance_payouts(
-        self, narrative: str
+        self, narrative: str, context: dict | None = None
     ) -> list[InsurancePayoutFields]:
         """Extract all insurance payout sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of insurance payout sources (may be empty)
         """
         logger.info("Extracting insurance payout sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

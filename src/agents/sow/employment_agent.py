@@ -21,17 +21,20 @@ class EmploymentIncomeAgent(BaseExtractionAgent):
             instructions=instructions,
         )
 
-    async def extract_employment(self, narrative: str) -> list[EmploymentIncomeFields]:
+    async def extract_employment(
+        self, narrative: str, context: dict | None = None
+    ) -> list[EmploymentIncomeFields]:
         """Extract all employment income sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of employment income sources (may be empty)
         """
         logger.info("Extracting employment income sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

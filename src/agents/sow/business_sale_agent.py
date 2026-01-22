@@ -22,18 +22,19 @@ class SaleOfBusinessAgent(BaseExtractionAgent):
         )
 
     async def extract_business_sales(
-        self, narrative: str
+        self, narrative: str, context: dict | None = None
     ) -> list[SaleOfBusinessFields]:
         """Extract all business sale sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of business sale sources (may be empty)
         """
         logger.info("Extracting business sale sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

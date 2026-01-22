@@ -46,10 +46,18 @@ class FollowUpQuestionAgent:
         """
         logger.info("Generating follow-up questions...")
 
-        # If everything is complete, no questions needed
-        if extraction_result.summary.sources_with_missing_fields == 0:
-            logger.info("All sources complete, no follow-up questions needed")
+        # Check if there are actually any missing fields to ask about
+        actual_missing_fields = self._count_actual_missing_fields(extraction_result)
+
+        if actual_missing_fields == 0:
+            logger.info(
+                "All required fields are complete, no follow-up questions needed"
+            )
             return []
+
+        logger.info(
+            f"Found {actual_missing_fields} missing fields to generate questions for"
+        )
 
         # Build context for question generation
         context = self._build_question_context(extraction_result)
@@ -103,6 +111,30 @@ class FollowUpQuestionAgent:
             # Fall back to simple generation
             return self._generate_simple_questions(extraction_result)
 
+    def _count_actual_missing_fields(self, extraction_result: ExtractionResult) -> int:
+        """Count actual missing fields (excluding errors and N/A fields).
+
+        Args:
+            extraction_result: The extraction result
+
+        Returns:
+            Count of genuinely missing fields that need questions
+        """
+        count = 0
+        for source in extraction_result.sources_of_wealth:
+            for missing in source.missing_fields:
+                # Skip error entries (these are bugs, not missing data)
+                if "error" in missing.field_name.lower():
+                    continue
+                # Skip not applicable fields
+                if "not applicable" in missing.reason.lower():
+                    continue
+                # Skip fields that are actually populated in extracted_fields
+                if source.extracted_fields.get(missing.field_name):
+                    continue
+                count += 1
+        return count
+
     def _build_question_context(self, extraction_result: ExtractionResult) -> str:
         """Build context string for question generation.
 
@@ -144,44 +176,61 @@ class FollowUpQuestionAgent:
 
         context_parts.append("SOURCES WITH MISSING DATA:")
         context_parts.append("")
+        context_parts.append(
+            "IMPORTANT: Only generate questions for fields listed as MISSING below."
+        )
+        context_parts.append(
+            "Do NOT ask about fields that already have values - those are COMPLETE."
+        )
+        context_parts.append("")
 
+        has_actual_missing = False
         for source in extraction_result.sources_of_wealth:
-            if source.missing_fields:
+            # Filter to only actual missing fields (not errors, not N/A, not already populated)
+            actual_missing = [
+                m
+                for m in source.missing_fields
+                if "error" not in m.field_name.lower()
+                and "not applicable" not in m.reason.lower()
+                and not source.extracted_fields.get(m.field_name)
+            ]
+
+            if actual_missing:
+                has_actual_missing = True
                 context_parts.append(f"Source {source.source_id}: {source.description}")
                 context_parts.append(f"  Type: {source.source_type}")
-                context_parts.append(f"  Completeness: {source.completeness_score:.0%}")
 
-                # Show extracted fields
-                context_parts.append("  Extracted Fields:")
+                # Show extracted fields (DO NOT ASK ABOUT THESE)
+                context_parts.append("  ALREADY COMPLETE (do NOT ask about these):")
                 for field_name, value in source.extracted_fields.items():
                     if value:
-                        value_str = str(value)[:60]  # Truncate long values
+                        value_str = str(value)[:60]
                         context_parts.append(f"    - {field_name}: {value_str}")
 
-                # Show missing fields
-                context_parts.append("  Missing Fields:")
-                for missing in source.missing_fields:
+                # Show ONLY the actual missing fields
+                context_parts.append("  MISSING (generate questions for these):")
+                for missing in actual_missing:
                     context_parts.append(f"    - {missing.field_name}")
                     context_parts.append(f"      Reason: {missing.reason}")
-                    if missing.partially_answered:
-                        context_parts.append("      Status: Partially answered")
-
-                # Show compliance flags if present
-                if source.compliance_flags:
-                    context_parts.append("  Compliance Flags:")
-                    for flag in source.compliance_flags:
-                        context_parts.append(f"    - {flag}")
 
                 context_parts.append("")
 
-        context_parts.append("-" * 60)
-        context_parts.append("")
-        context_parts.append(
-            "Please generate 5-15 specific, actionable follow-up questions to ask the client."
-        )
-        context_parts.append(
-            'Return as JSON with this format: {"questions": ["question 1", "question 2", ...]}'
-        )
+        if not has_actual_missing:
+            context_parts.append("No missing fields found. All data is complete.")
+            context_parts.append("")
+            context_parts.append('Return: {"questions": []}')
+        else:
+            context_parts.append("-" * 60)
+            context_parts.append("")
+            context_parts.append(
+                "Generate questions ONLY for the fields listed under MISSING above."
+            )
+            context_parts.append(
+                "If there are no missing fields, return an empty list."
+            )
+            context_parts.append(
+                'Return as JSON: {"questions": ["question 1", "question 2", ...]}'
+            )
 
         return "\n".join(context_parts)
 
@@ -203,8 +252,14 @@ class FollowUpQuestionAgent:
                 continue
 
             for missing in source.missing_fields[:2]:  # Limit per source
+                # Skip error entries
+                if "error" in missing.field_name.lower():
+                    continue
                 # Skip N/A fields
                 if "not applicable" in missing.reason.lower():
+                    continue
+                # Skip if field is actually populated
+                if source.extracted_fields.get(missing.field_name):
                     continue
 
                 # Format field name

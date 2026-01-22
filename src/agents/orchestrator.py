@@ -18,6 +18,7 @@ from src.agents.sow import (
 )
 from src.agents.followup_agent import FollowUpQuestionAgent
 from src.agents.metadata_agent import MetadataAgent
+from src.agents.validation_agent import ValidationAgent
 from src.knowledge.sow_knowledge import get_knowledge_base
 from src.models.schemas import (
     AccountHolder,
@@ -35,6 +36,11 @@ from src.utils.sow_utils import (
     detect_compliance_flags,
     detect_overlapping_sources,
     generate_description,
+)
+from src.utils.deduplication import deduplicate_sources
+from src.utils.validation import (
+    apply_corrections,
+    find_validation_issues,
 )
 
 logger = get_logger(__name__)
@@ -68,6 +74,9 @@ class Orchestrator:
 
         # Initialize follow-up question agent
         self.followup_agent = FollowUpQuestionAgent()
+
+        # Initialize validation agent (for two-step validation)
+        self.validation_agent = ValidationAgent()
 
         logger.info("Orchestrator initialized successfully")
 
@@ -137,7 +146,11 @@ class Orchestrator:
             )
 
     async def _call_agent_safely(
-        self, agent_method, narrative: str, source_type: str
+        self,
+        agent_method,
+        narrative: str,
+        source_type: str,
+        context: dict | None = None,
     ) -> list[Any]:
         """Call an agent method with error handling.
 
@@ -145,11 +158,18 @@ class Orchestrator:
             agent_method: The agent method to call
             narrative: Client narrative text
             source_type: Type of source for logging
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of extracted sources (empty list on error)
         """
         try:
+            # Pass context to agent if the method supports it
+            result = await agent_method(narrative, context=context)
+            logger.info(f"Agent for {source_type} extracted {len(result)} source(s)")
+            return result
+        except TypeError:
+            # Fallback for agents that don't support context parameter yet
             result = await agent_method(narrative)
             logger.info(f"Agent for {source_type} extracted {len(result)} source(s)")
             return result
@@ -157,18 +177,26 @@ class Orchestrator:
             logger.error(f"Agent for {source_type} failed: {e}", exc_info=True)
             return []
 
-    async def dispatch_all_agents(self, narrative: str) -> dict[str, list[Any]]:
-        """Dispatch all 11 extraction agents in parallel.
+    async def dispatch_all_agents(
+        self, narrative: str, context: dict | None = None
+    ) -> dict[str, list[Any]]:
+        """Dispatch all 11 extraction agents in parallel with context.
 
         Each agent has built-in retry logic for rate limits via the base class.
+        Context (account holder info) is passed to help agents with entity awareness.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             Dictionary mapping source type to list of extracted sources
         """
         logger.info("Dispatching all 11 extraction agents in parallel...")
+        if context:
+            logger.info(
+                f"Context provided: account_holder={context.get('account_holder_name')}"
+            )
 
         # Define agents and their types
         agents_info = [
@@ -188,9 +216,9 @@ class Orchestrator:
             (self.insurance_agent.extract_insurance_payouts, "insurance_payout"),
         ]
 
-        # Run all agents in parallel (each has retry logic in base class)
+        # Run all agents in parallel with context (each has retry logic in base class)
         tasks = [
-            self._call_agent_safely(agent_method, narrative, source_type)
+            self._call_agent_safely(agent_method, narrative, source_type, context)
             for agent_method, source_type in agents_info
         ]
 
@@ -232,7 +260,10 @@ class Orchestrator:
         # Track business entities for deduplication notes
         business_entities: dict[str, list[tuple[str, str]]] = {}
 
-        for source_type, extracted_list in agent_results.items():
+        for source_type_str, extracted_list in agent_results.items():
+            # Convert string key to SourceType enum
+            source_type = SourceType(source_type_str)
+
             for extracted_fields_obj in extracted_list:
                 # Convert Pydantic model to dict
                 extracted_fields = extracted_fields_obj.model_dump()
@@ -337,24 +368,48 @@ class Orchestrator:
         logger.info("Starting SOW extraction process...")
 
         try:
-            # Step 1: Extract metadata
+            # Step 1: Extract metadata FIRST (provides context for other agents)
             metadata = await self.extract_metadata(narrative)
 
-            # Step 2: Dispatch all agents in parallel
-            agent_results = await self.dispatch_all_agents(narrative)
+            # Step 2: Build context for SOW agents (entity awareness)
+            context = {
+                "account_holder_name": metadata.account_holder.name,
+                "account_type": metadata.account_holder.type.value,
+            }
 
-            # Step 3: Merge results and assign source_ids
+            # Step 3: Dispatch all agents in parallel with context
+            agent_results = await self.dispatch_all_agents(narrative, context=context)
+
+            # Step 4: Merge results and assign source_ids
             sources = self.merge_results_to_sources(
                 agent_results, metadata.account_holder
             )
 
-            # Step 4: Detect overlapping sources (same event, multiple sources)
+            # Step 5: Two-step validation
+            # 5a: Deterministic checks - fast, no LLM calls
+            validation_issues = find_validation_issues(sources, narrative)
+
+            # 5b: LLM validation - fix flagged fields only (if any issues found)
+            if validation_issues:
+                logger.info(
+                    f"Found {len(validation_issues)} validation issues, "
+                    "running LLM validation..."
+                )
+                corrections = await self.validation_agent.validate_all_issues(
+                    narrative, context, sources, validation_issues
+                )
+                sources = apply_corrections(sources, corrections)
+
+            # Step 6: Deduplication - merge/remove duplicate sources
+            sources = deduplicate_sources(sources)
+
+            # Step 7: Detect overlapping sources (same event, multiple sources)
             sources = detect_overlapping_sources(sources)
 
-            # Step 5: Calculate summary
+            # Step 8: Calculate summary
             summary = calculate_summary(sources)
 
-            # Step 6: Generate follow-up questions using dedicated agent
+            # Step 9: Generate follow-up questions using dedicated agent
             # Create preliminary result for question generation
             preliminary_result = ExtractionResult(
                 metadata=metadata,

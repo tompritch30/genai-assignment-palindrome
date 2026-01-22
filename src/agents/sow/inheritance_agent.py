@@ -21,17 +21,20 @@ class InheritanceAgent(BaseExtractionAgent):
             instructions=instructions,
         )
 
-    async def extract_inheritances(self, narrative: str) -> list[InheritanceFields]:
+    async def extract_inheritances(
+        self, narrative: str, context: dict | None = None
+    ) -> list[InheritanceFields]:
         """Extract all inheritance sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of inheritance sources (may be empty)
         """
         logger.info("Extracting inheritance sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

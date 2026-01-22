@@ -22,18 +22,19 @@ class DivorceSettlementAgent(BaseExtractionAgent):
         )
 
     async def extract_divorce_settlements(
-        self, narrative: str
+        self, narrative: str, context: dict | None = None
     ) -> list[DivorceSettlementFields]:
         """Extract all divorce settlement sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of divorce settlement sources (may be empty)
         """
         logger.info("Extracting divorce settlement sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

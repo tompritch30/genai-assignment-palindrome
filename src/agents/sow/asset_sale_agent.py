@@ -21,17 +21,20 @@ class SaleOfAssetAgent(BaseExtractionAgent):
             instructions=instructions,
         )
 
-    async def extract_asset_sales(self, narrative: str) -> list[SaleOfAssetFields]:
+    async def extract_asset_sales(
+        self, narrative: str, context: dict | None = None
+    ) -> list[SaleOfAssetFields]:
         """Extract all asset sale sources from narrative.
 
         Args:
             narrative: Client narrative text
+            context: Optional context dict with account_holder_name, account_type
 
         Returns:
             List of asset sale sources (may be empty)
         """
         logger.info("Extracting asset sale sources...")
-        result = await self.extract(narrative)
+        result = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

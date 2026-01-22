@@ -10,14 +10,14 @@ Extract the following metadata from client narratives:
 CRITICAL - Detecting Joint Accounts:
 Look for these indicators of JOINT accounts:
 - Words: "we", "our", "joint", "combined", "together", "both of us"
-- Multiple names: "Michael and Sarah", "John & Jane"
+- Multiple names: "John and Jane", "Peter & Mary"
 - Phrases: "joint account", "joint statement", "our combined wealth"
-- Multiple sections: "Michael's sources" AND "Sarah's sources"
+- Multiple sections: "John's sources" AND "Jane's sources"
 
 If ANY of these indicators are present, set account_type to "joint"!
 
 For joint accounts:
-- Extract BOTH/ALL names separated by " and " (e.g., "Michael Thompson and Sarah Thompson")
+- Extract BOTH/ALL names separated by " and " (e.g., "John Williams and Jane Williams")
 - Set account_type to "joint"
 
 For individual accounts:
@@ -41,8 +41,8 @@ Example individual account:
 
 Example joint account:
 {
-  "account_holder_name": "Michael Thompson and Sarah Thompson",
+  "account_holder_name": "John Williams and Jane Williams",
   "account_type": "joint",
-  "total_stated_net_worth": 850000,
+  "total_stated_net_worth": 950000,
   "currency": "GBP"
 }

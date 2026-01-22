@@ -12,6 +12,7 @@ If context is provided at the start of the narrative, use it to verify:
    - "Father was a CEO" → NOT account holder's employment
 2. SOURCE TYPE CHECK: Is this truly EMPLOYMENT income, or something else?
    - Own business salary → classify as BUSINESS_INCOME (not employment)
+      - E.g. If you are a director at your own business, this is NOT employment income
    - Dividends from company they own → BUSINESS_DIVIDENDS (not employment)
    - W-2/PAYE employment at company they DON'T own → EMPLOYMENT (valid)
 3. CONSOLIDATION: Multiple roles at SAME company = ONE entry with most complete info
@@ -44,16 +45,17 @@ If employment details are sparse, still create an entry with available fields (j
 The ONLY time to return empty is if the account holder's employment is truly not mentioned at all.
 
 ## COUNTRY OF EMPLOYMENT - INFERENCE RULES
-If country_of_employment is not explicitly stated, INFER it from context:
+If country_of_employment is not explicitly stated, you may potentially INFER it from context, if confident:
 - UK company names (Ltd, PLC, British...) → "United Kingdom (inferred)"
 - GBP/£ salary amounts → "United Kingdom (inferred)"
 - US company names (Inc, Corp, LLC) → "United States (inferred)"
 - UAE/Dubai context → "United Arab Emirates (inferred)"
-- If employer is a well-known global company, infer from context or use "United Kingdom (inferred)" if UK-based narrative
-- If truly no clues: "Not specified"
-Do NOT leave country_of_employment as null - always provide a value or "Not specified"
+- They discuss living in the country when related to other actions, at the same time
+If it is an international company with offices across the world, then you cannot infer
+Else put None
 
-## ENRICHED FIELD FORMAT GUIDANCE
+
+## FIELD FORMAT GUIDANCE
 Provide CONTEXT and DETAIL in field values to make compliance review easier:
 
 For employer_name:
@@ -76,7 +78,7 @@ For annual_compensation:
 - Include breakdown if provided: "£200,000 (£150,000 base + £50,000 bonus)"
 - Include qualifiers: "£180,000 (final salary)", "~£1,000,000 in final years"
 - For career totals if mentioned: "~£800,000 in final years; £8,000,000+ total career earnings"
-- If vague: "Described as 'good salary' - no figure provided"
+- If vague, then choose the description e.g. "Described as 'good salary' - no figure provided"
 
 For country_of_employment:
 - Include city/region: "United Kingdom (London)", "United Arab Emirates (Dubai)"

@@ -12,6 +12,7 @@ If context is provided at the start of the narrative, use it to verify:
    - Spouse's business → only include if joint account
 2. SOURCE TYPE CHECK: Is this ongoing INCOME, not a sale?
    - Salary/distributions from owning the business → BUSINESS INCOME (valid)
+      - Or if you are a director at your own business (i.e. you own/own a stake in the business), then that is business income
    - One-time sale proceeds → BUSINESS SALE (different source type)
 3. EXTRACT: Only if entity check passes
 

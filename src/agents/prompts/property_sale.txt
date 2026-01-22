@@ -42,6 +42,7 @@ For property_type:
   - "Buy-to-let investment"
   - "Townhouse - Primary residence"
   - "Commercial - Office building"
+  - This should be formal and not e.g. 'previous house' this field is stating the formal property type
 
 For original_acquisition_method:
 - Include SOURCE of funds: "Purchased with savings and mortgage"

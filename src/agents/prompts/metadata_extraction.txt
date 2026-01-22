@@ -46,3 +46,5 @@ Example joint account:
   "total_stated_net_worth": 950000,
   "currency": "GBP"
 }
+
+It is important for joint accounts to follow the format: [FULL NAME 1] and [FULL NAME 2] AND ...

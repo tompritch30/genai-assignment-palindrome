@@ -7,19 +7,24 @@ This script:
 4. Logs detailed comparison metrics for tracking improvements
 
 Usage:
-    python scripts/run_extraction.py
-    python scripts/run_extraction.py --cases case_01 case_02  # Run specific cases
-    python scripts/run_extraction.py --training-only          # Training data only
-    python scripts/run_extraction.py --holdout-only           # Holdout data only
+    python run_extraction.py
+    python run_extraction.py --cases case_01 case_02  # Run specific cases
+    python run_extraction.py --training-only          # Training data only
+    python run_extraction.py --holdout-only           # Holdout data only
+    python run_extraction.py --llm-eval               # Use LLM for semantic field comparison
 """
 
 import argparse
 import asyncio
 import json
+import re
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from pydantic import BaseModel
+from pydantic_ai import Agent
 
 from src.agents.orchestrator import Orchestrator
 from src.loaders.document_loader import DocumentLoader
@@ -30,14 +35,111 @@ setup_logging()
 logger = get_logger(__name__)
 
 
+# LLM-based field comparison for semantic matching
+class FieldComparisonResult(BaseModel):
+    """Result of LLM-based field comparison."""
+
+    equivalent: bool
+    actual_has_more_detail: bool
+    expected_has_more_detail: bool
+    reasoning: str
+
+
+class LLMFieldEvaluator:
+    """Uses LLM to evaluate if two field values are semantically equivalent."""
+
+    def __init__(self, model: str = "openai:gpt-4o-mini"):
+        """Initialize evaluator with a cheaper/faster model for judging."""
+        self._agent = Agent(
+            model=model,
+            instructions="""You are an expert evaluator comparing extracted field values for KYC/AML compliance.
+
+Your task is to determine if two values for the same field are SEMANTICALLY EQUIVALENT.
+
+Rules:
+1. Synonyms are equivalent: "spouse" = "wife" = "husband", "father" = "dad"
+2. Same information in different words is equivalent
+3. More detail is BETTER, not wrong: "June 2022" is better than "2022"
+4. Number formats are equivalent: "£1.2 million" = "£1,200,000" = "£1200000"
+5. Minor wording differences are equivalent if meaning is same
+6. Missing key information means NOT equivalent
+
+Be strict about core facts but lenient about phrasing.""",
+            retries=2,
+        )
+        self._cache: dict[tuple[str, str, str], FieldComparisonResult] = {}
+
+    async def compare_fields(
+        self, field_name: str, expected: str, actual: str
+    ) -> FieldComparisonResult:
+        """Compare two field values using LLM.
+
+        Args:
+            field_name: Name of the field being compared
+            expected: Expected value from ground truth
+            actual: Actual extracted value
+
+        Returns:
+            FieldComparisonResult with equivalence judgment
+        """
+        # Check cache first
+        cache_key = (field_name, expected, actual)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        prompt = f"""Compare these two values for the field '{field_name}':
+
+EXPECTED (ground truth): {expected}
+ACTUAL (extracted): {actual}
+
+Determine:
+1. Are they semantically equivalent? (convey the same core information)
+2. Does ACTUAL contain more useful detail than EXPECTED?
+3. Does EXPECTED contain important info missing from ACTUAL?
+
+Return your analysis."""
+
+        try:
+            result = await self._agent.run(prompt, output_type=FieldComparisonResult)
+            self._cache[cache_key] = result.output
+            return result.output
+        except Exception as e:
+            logger.warning(f"LLM field comparison failed for {field_name}: {e}")
+            # Fall back to non-equivalent
+            return FieldComparisonResult(
+                equivalent=False,
+                actual_has_more_detail=False,
+                expected_has_more_detail=False,
+                reasoning=f"LLM comparison failed: {e}",
+            )
+
+    async def compare_fields_batch(
+        self, comparisons: list[tuple[str, str, str]]
+    ) -> list[FieldComparisonResult]:
+        """Compare multiple field pairs in parallel.
+
+        Args:
+            comparisons: List of (field_name, expected, actual) tuples
+
+        Returns:
+            List of FieldComparisonResult in same order
+        """
+        tasks = [
+            self.compare_fields(field_name, expected, actual)
+            for field_name, expected, actual in comparisons
+        ]
+        return await asyncio.gather(*tasks)
+
+
 class ExtractionRunner:
     """Handles extraction runs and result logging."""
 
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, use_llm_eval: bool = False):
         """Initialize extraction runner.
 
         Args:
             output_dir: Directory to save results
+            use_llm_eval: Whether to use LLM-based semantic field comparison
         """
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -50,6 +152,13 @@ class ExtractionRunner:
         self.orchestrator = Orchestrator()
         self.results = []
         self.comparison_stats = defaultdict(lambda: defaultdict(int))
+
+        # LLM-based evaluation
+        self.use_llm_eval = use_llm_eval
+        self.llm_evaluator = LLMFieldEvaluator() if use_llm_eval else None
+        self._pending_llm_comparisons: list[
+            tuple[str, str, str, dict]
+        ] = []  # For batch processing
 
     async def process_case(self, case_path: Path) -> dict[str, Any]:
         """Process a single test case.
@@ -91,6 +200,10 @@ class ExtractionRunner:
             comparison = (
                 self._compare_results(result, expected, case_name) if expected else None
             )
+
+            # Run LLM evaluation on mismatched fields if enabled
+            if comparison and self.use_llm_eval:
+                comparison = await self._run_llm_evaluations(comparison)
 
             case_result = {
                 "case_name": case_name,
@@ -253,7 +366,7 @@ class ExtractionRunner:
     def _compare_sources(
         self, actual_sources, expected_sources: list
     ) -> dict[str, Any]:
-        """Compare sources of wealth."""
+        """Compare sources of wealth with smart matching for multiple sources of same type."""
         comparison = {
             "expected_count": len(expected_sources),
             "actual_count": len(actual_sources),
@@ -263,44 +376,231 @@ class ExtractionRunner:
             "field_accuracy": [],
         }
 
-        # Track which source types are expected vs actual
-        expected_types = [s.get("source_type") for s in expected_sources]
-        actual_types = [s.source_type.value for s in actual_sources]
+        # Group sources by type for proper matching
+        actual_by_type: dict[str, list] = {}
+        for source in actual_sources:
+            stype = source.source_type.value
+            if stype not in actual_by_type:
+                actual_by_type[stype] = []
+            actual_by_type[stype].append(source)
 
-        # Find missing sources
-        for exp_type in expected_types:
-            if exp_type not in actual_types:
-                comparison["sources_missing"].append(exp_type)
+        expected_by_type: dict[str, list] = {}
+        for source in expected_sources:
+            stype = source.get("source_type")
+            if stype not in expected_by_type:
+                expected_by_type[stype] = []
+            expected_by_type[stype].append(source)
 
-        # Find extra sources
-        for act_type in actual_types:
-            if act_type not in expected_types:
-                comparison["sources_extra"].append(act_type)
+        # Find missing and extra source types (by count)
+        all_types = set(actual_by_type.keys()) | set(expected_by_type.keys())
+        for stype in all_types:
+            expected_count = len(expected_by_type.get(stype, []))
+            actual_count = len(actual_by_type.get(stype, []))
 
-        # Compare matching sources field-by-field
-        for expected_source in expected_sources:
-            exp_type = expected_source.get("source_type")
+            if expected_count > actual_count:
+                # Missing sources of this type
+                for _ in range(expected_count - actual_count):
+                    comparison["sources_missing"].append(stype)
+            elif actual_count > expected_count:
+                # Extra sources of this type
+                for _ in range(actual_count - expected_count):
+                    comparison["sources_extra"].append(stype)
 
-            # Find matching actual source
-            matching_actual = None
-            for actual_source in actual_sources:
-                if actual_source.source_type.value == exp_type:
-                    matching_actual = actual_source
-                    break
+        # Smart matching: for each source type, find best matches between expected and actual
+        for stype in all_types:
+            expected_list = expected_by_type.get(stype, [])
+            actual_list = list(actual_by_type.get(stype, []))  # Copy to track used
 
-            if matching_actual:
-                comparison["sources_matched"] += 1
-                field_acc = self._compare_source_fields(
-                    matching_actual, expected_source
-                )
-                comparison["field_accuracy"].append(
-                    {
-                        "source_type": exp_type,
-                        "accuracy": field_acc,
-                    }
-                )
+            for expected_source in expected_list:
+                if not actual_list:
+                    # No more actual sources of this type to match
+                    # Record unmatched expected source
+                    comparison["field_accuracy"].append(
+                        {
+                            "source_type": stype,
+                            "accuracy": {
+                                "total_fields": len(
+                                    expected_source.get("extracted_fields", {})
+                                ),
+                                "matched_fields": 0,
+                                "missing_fields": list(
+                                    expected_source.get("extracted_fields", {}).keys()
+                                ),
+                                "incorrect_fields": [],
+                                "accuracy_rate": 0.0,
+                                "unmatched": True,
+                            },
+                        }
+                    )
+                    continue
+
+                # Find best matching actual source based on field similarity
+                best_match = None
+                best_score = -1
+                best_idx = -1
+
+                for idx, actual_source in enumerate(actual_list):
+                    score = self._calculate_match_score(actual_source, expected_source)
+                    if score > best_score:
+                        best_score = score
+                        best_match = actual_source
+                        best_idx = idx
+
+                # CRITICAL: Only match if we have at least SOME identifying field match
+                # A score of 0 means no key fields matched - don't force a match
+                if best_match is not None and best_score > 0:
+                    comparison["sources_matched"] += 1
+                    # Remove from available pool so it can't be reused
+                    actual_list.pop(best_idx)
+
+                    field_acc = self._compare_source_fields(best_match, expected_source)
+                    comparison["field_accuracy"].append(
+                        {
+                            "source_type": stype,
+                            "accuracy": field_acc,
+                        }
+                    )
+                elif (
+                    best_match is not None and best_score == 0 and len(actual_list) == 1
+                ):
+                    # Only one source of this type and score=0 - likely still a match
+                    # but flag it as low-confidence
+                    comparison["sources_matched"] += 1
+                    actual_list.pop(best_idx)
+
+                    field_acc = self._compare_source_fields(best_match, expected_source)
+                    field_acc["low_confidence_match"] = True
+                    comparison["field_accuracy"].append(
+                        {
+                            "source_type": stype,
+                            "accuracy": field_acc,
+                        }
+                    )
+                else:
+                    # No good match found - record as unmatched
+                    comparison["field_accuracy"].append(
+                        {
+                            "source_type": stype,
+                            "accuracy": {
+                                "total_fields": len(
+                                    expected_source.get("extracted_fields", {})
+                                ),
+                                "matched_fields": 0,
+                                "missing_fields": list(
+                                    expected_source.get("extracted_fields", {}).keys()
+                                ),
+                                "incorrect_fields": [],
+                                "accuracy_rate": 0.0,
+                                "unmatched": True,
+                            },
+                        }
+                    )
 
         return comparison
+
+    def _calculate_match_score(self, actual_source, expected_source: dict) -> float:
+        """Calculate similarity score between actual and expected source for matching.
+
+        Uses key identifying fields to match sources of the same type.
+        Higher score = better match. Score of 0 means no key fields matched.
+        """
+        expected_fields = expected_source.get("extracted_fields", {})
+        actual_fields = actual_source.extracted_fields
+
+        # Key fields that identify a source (varies by type)
+        # These are fields that uniquely identify a source instance
+        key_fields = {
+            "employment_income": ["employer_name", "job_title"],
+            "sale_of_property": ["property_address", "sale_date"],
+            "business_income": ["business_name"],
+            "business_dividends": ["company_name"],
+            "sale_of_business": ["business_name", "sale_date"],
+            "sale_of_asset": ["asset_description"],
+            "inheritance": ["deceased_name"],
+            "gift": ["donor_name", "gift_date"],
+            "divorce_settlement": ["former_spouse_name"],
+            "lottery_winnings": ["lottery_name", "win_date"],
+            "insurance_payout": ["insurance_provider", "policy_type"],
+        }
+
+        source_type = expected_source.get("source_type", "")
+        fields_to_check = key_fields.get(source_type, list(expected_fields.keys())[:2])
+
+        score = 0
+        fields_compared = 0
+
+        for field in fields_to_check:
+            expected_val = expected_fields.get(field)
+            actual_val = actual_fields.get(field)
+
+            if expected_val and actual_val:
+                fields_compared += 1
+                # Use strict matching for source identification
+                if self._fuzzy_match_for_identification(
+                    str(actual_val), str(expected_val)
+                ):
+                    score += 1
+
+        # Bonus: if we matched the primary identifier (first field), give extra weight
+        if fields_to_check and fields_compared > 0:
+            first_field = fields_to_check[0]
+            if expected_fields.get(first_field) and actual_fields.get(first_field):
+                if self._fuzzy_match_for_identification(
+                    str(actual_fields.get(first_field)),
+                    str(expected_fields.get(first_field)),
+                ):
+                    score += 1  # Double weight for primary identifier
+
+        return score
+
+    def _fuzzy_match_for_identification(self, actual: str, expected: str) -> bool:
+        """Strict fuzzy matching for SOURCE IDENTIFICATION (matching sources).
+
+        This is used to determine if two sources are the "same" entity (e.g., same employer).
+        Must be strict to avoid false matches.
+        """
+        if not actual or not expected:
+            return False
+
+        actual_lower = actual.lower().strip()
+        expected_lower = expected.lower().strip()
+
+        # Exact match
+        if actual_lower == expected_lower:
+            return True
+
+        # Remove common suffixes/prefixes for company names
+        suffixes = [" ltd", " plc", " inc", " llc", " limited", " ag", " gmbh"]
+        actual_clean = actual_lower
+        expected_clean = expected_lower
+        for suffix in suffixes:
+            actual_clean = actual_clean.replace(suffix, "").strip()
+            expected_clean = expected_clean.replace(suffix, "").strip()
+
+        if actual_clean == expected_clean:
+            return True
+
+        # One contains the other (handles "Deutsche Bank" vs "Deutsche Bank AG")
+        # But require the shorter one to be at least 5 chars to avoid "UK" matching everything
+        if len(actual_clean) >= 5 and len(expected_clean) >= 5:
+            if actual_clean in expected_clean or expected_clean in actual_clean:
+                return True
+
+        # For names with relationship context like "John Smith (father)"
+        # Extract just the name part before parentheses
+        actual_name = actual_lower.split("(")[0].strip()
+        expected_name = expected_lower.split("(")[0].strip()
+
+        if (
+            actual_name
+            and expected_name
+            and len(actual_name) >= 3
+            and len(expected_name) >= 3
+        ):
+            if actual_name == expected_name:
+                return True
+
+        return False
 
     def _compare_source_fields(
         self, actual_source, expected_source: dict
@@ -314,6 +614,7 @@ class ExtractionRunner:
             "matched_fields": 0,
             "missing_fields": [],
             "incorrect_fields": [],
+            "pending_llm_eval": [],  # Fields to evaluate with LLM
         }
 
         for field_name, expected_value in expected_fields.items():
@@ -324,6 +625,7 @@ class ExtractionRunner:
             elif self._values_match(actual_value, expected_value):
                 field_comparison["matched_fields"] += 1
             else:
+                # String match failed - queue for LLM evaluation if enabled
                 field_comparison["incorrect_fields"].append(
                     {
                         "field": field_name,
@@ -331,6 +633,11 @@ class ExtractionRunner:
                         "actual": actual_value,
                     }
                 )
+                # Mark for LLM evaluation
+                if self.use_llm_eval and expected_value and actual_value:
+                    field_comparison["pending_llm_eval"].append(
+                        (field_name, str(expected_value), str(actual_value))
+                    )
 
         if field_comparison["total_fields"] > 0:
             field_comparison["accuracy_rate"] = (
@@ -341,8 +648,95 @@ class ExtractionRunner:
 
         return field_comparison
 
+    async def _run_llm_evaluations(self, comparison: dict) -> dict:
+        """Run LLM evaluations on pending field comparisons and update results.
+
+        Args:
+            comparison: The comparison dict from _compare_results
+
+        Returns:
+            Updated comparison dict with LLM evaluation results
+        """
+        if not self.use_llm_eval or not self.llm_evaluator:
+            return comparison
+
+        # Collect all pending LLM evaluations from source comparisons
+        all_pending: list[
+            tuple[str, str, str, int, int]
+        ] = []  # (field, expected, actual, src_idx, field_idx)
+
+        src_comp = comparison.get("sources", {})
+        for src_idx, src_acc in enumerate(src_comp.get("field_accuracy", [])):
+            acc = src_acc.get("accuracy", {})
+            pending = acc.get("pending_llm_eval", [])
+            for field_idx, (field_name, expected, actual) in enumerate(pending):
+                all_pending.append((field_name, expected, actual, src_idx, field_idx))
+
+        if not all_pending:
+            return comparison
+
+        logger.info(
+            f"Running LLM evaluation on {len(all_pending)} field comparisons..."
+        )
+
+        # Run LLM comparisons in batch
+        comparisons_input = [(f, e, a) for f, e, a, _, _ in all_pending]
+        llm_results = await self.llm_evaluator.compare_fields_batch(comparisons_input)
+
+        # Update the comparison results
+        llm_matched = 0
+        llm_details = []
+
+        for (field_name, expected, actual, src_idx, _), result in zip(
+            all_pending, llm_results
+        ):
+            if result.equivalent:
+                llm_matched += 1
+                # Move from incorrect to matched
+                src_acc = src_comp["field_accuracy"][src_idx]
+                acc = src_acc["accuracy"]
+                acc["matched_fields"] += 1
+                # Remove from incorrect_fields
+                acc["incorrect_fields"] = [
+                    f for f in acc["incorrect_fields"] if f["field"] != field_name
+                ]
+                # Recalculate accuracy
+                if acc["total_fields"] > 0:
+                    acc["accuracy_rate"] = acc["matched_fields"] / acc["total_fields"]
+
+            llm_details.append(
+                {
+                    "field": field_name,
+                    "expected": expected[:100],  # Truncate for readability
+                    "actual": actual[:100],
+                    "equivalent": result.equivalent,
+                    "actual_better": result.actual_has_more_detail,
+                    "reasoning": result.reasoning[:200],
+                }
+            )
+
+        # Add LLM evaluation summary to comparison
+        comparison["llm_evaluation"] = {
+            "total_evaluated": len(all_pending),
+            "semantically_matched": llm_matched,
+            "details": llm_details,
+        }
+
+        logger.info(
+            f"LLM evaluation: {llm_matched}/{len(all_pending)} fields semantically equivalent"
+        )
+
+        return comparison
+
     def _values_match(self, actual: Any, expected: Any) -> bool:
-        """Check if two values match (with fuzzy matching for strings)."""
+        """Check if two values match (with fuzzy matching for strings and amounts).
+
+        Matching rules:
+        1. Exact match always counts
+        2. Numeric amounts match if within 1% tolerance
+        3. Actual contained in expected counts (actual is core value, expected has annotations)
+        4. Expected contained in actual ONLY if actual provides MORE detail (not less)
+        """
         if actual is None and expected is None:
             return True
         if actual is None or expected is None:
@@ -350,13 +744,77 @@ class ExtractionRunner:
 
         # Normalize strings for comparison
         if isinstance(actual, str) and isinstance(expected, str):
-            return actual.lower().strip() == expected.lower().strip()
+            actual_lower = actual.lower().strip()
+            expected_lower = expected.lower().strip()
+
+            # Exact match
+            if actual_lower == expected_lower:
+                return True
+
+            # Try to extract and compare numeric amounts
+            actual_amount = self._extract_amount(actual)
+            expected_amount = self._extract_amount(expected)
+            if actual_amount is not None and expected_amount is not None:
+                # Allow 1% tolerance for numeric amounts
+                if (
+                    abs(actual_amount - expected_amount) / max(expected_amount, 1)
+                    < 0.01
+                ):
+                    return True
+
+            # Check if actual is contained in expected (expected may have annotations)
+            # e.g., "£245,000" vs "£245,000 (£180,000 base + £50,000-£80,000 bonus)"
+            # This is valid - actual has the core value
+            if len(actual_lower) >= 3 and actual_lower in expected_lower:
+                return True
+
+            # Check if expected is contained in actual - ONLY valid if actual is LONGER
+            # (i.e., actual provides more detail than expected)
+            # e.g., expected "UK" vs actual "United Kingdom (London)" - actual is better
+            # But NOT: expected "United Kingdom (London)" vs actual "UK" - actual is worse
+            if len(expected_lower) >= 3 and expected_lower in actual_lower:
+                # Only match if actual is providing MORE detail (longer)
+                if len(actual_lower) >= len(expected_lower):
+                    return True
+                # Don't give credit if actual is a sparse abbreviation
+
+            return False
 
         # Numeric comparison
         if isinstance(actual, (int, float)) and isinstance(expected, (int, float)):
             return abs(actual - expected) < 0.01
 
         return actual == expected
+
+    def _extract_amount(self, value: str) -> float | None:
+        """Extract numeric amount from a string like '£245,000' or '£3.2 million'."""
+        if not isinstance(value, str):
+            return None
+
+        # Remove currency symbols and common words
+        clean = value.lower().replace("£", "").replace("$", "").replace("€", "")
+        clean = (
+            clean.replace(",", "").replace("approximately", "").replace("around", "")
+        )
+        clean = clean.strip()
+
+        # Handle "X million" format
+        million_match = re.search(r"([\d.]+)\s*million", clean)
+        if million_match:
+            try:
+                return float(million_match.group(1)) * 1_000_000
+            except ValueError:
+                pass
+
+        # Handle plain numbers
+        num_match = re.search(r"^([\d.]+)", clean)
+        if num_match:
+            try:
+                return float(num_match.group(1))
+            except ValueError:
+                pass
+
+        return None
 
     def _compare_summary(
         self, actual_summary, expected_summary: dict
@@ -373,6 +831,151 @@ class ExtractionRunner:
             comparison["actual_total"] = actual_total
 
         return comparison
+
+    def _write_aggregate_stats(self, f):
+        """Write aggregate accuracy statistics across all cases."""
+        # Collect stats across all cases
+        total_fields = 0
+        matched_fields = 0
+        missing_fields_count = 0  # Fields that were null when expected to have value
+        incorrect_fields_count = 0  # Fields with wrong values
+        total_sources_expected = 0
+        total_sources_matched = 0
+        missing_by_type: dict[str, int] = {}
+        extra_by_type: dict[str, int] = {}
+        accuracy_by_type: dict[
+            str, dict
+        ] = {}  # {type: {total, matched, missing, incorrect, sources}}
+        unmatched_sources = 0
+
+        # LLM evaluation stats
+        llm_total_evaluated = 0
+        llm_semantically_matched = 0
+
+        for result in self.results:
+            if not result.get("success") or not result.get("comparison"):
+                continue
+
+            comp = result["comparison"]
+            src_comp = comp.get("sources", {})
+
+            # LLM evaluation stats
+            llm_eval = comp.get("llm_evaluation", {})
+            llm_total_evaluated += llm_eval.get("total_evaluated", 0)
+            llm_semantically_matched += llm_eval.get("semantically_matched", 0)
+
+            # Source-level stats
+            total_sources_expected += src_comp.get("expected_count", 0)
+            total_sources_matched += src_comp.get("sources_matched", 0)
+
+            # Missing/extra by type
+            for stype in src_comp.get("sources_missing", []):
+                missing_by_type[stype] = missing_by_type.get(stype, 0) + 1
+            for stype in src_comp.get("sources_extra", []):
+                extra_by_type[stype] = extra_by_type.get(stype, 0) + 1
+
+            # Field-level accuracy by source type
+            for src_acc in src_comp.get("field_accuracy", []):
+                stype = src_acc.get("source_type", "unknown")
+                acc = src_acc.get("accuracy", {})
+
+                if stype not in accuracy_by_type:
+                    accuracy_by_type[stype] = {
+                        "total": 0,
+                        "matched": 0,
+                        "missing": 0,
+                        "incorrect": 0,
+                        "sources": 0,
+                    }
+
+                accuracy_by_type[stype]["total"] += acc.get("total_fields", 0)
+                accuracy_by_type[stype]["matched"] += acc.get("matched_fields", 0)
+                accuracy_by_type[stype]["missing"] += len(acc.get("missing_fields", []))
+                accuracy_by_type[stype]["incorrect"] += len(
+                    acc.get("incorrect_fields", [])
+                )
+                accuracy_by_type[stype]["sources"] += 1
+
+                if acc.get("unmatched"):
+                    unmatched_sources += 1
+
+                total_fields += acc.get("total_fields", 0)
+                matched_fields += acc.get("matched_fields", 0)
+                missing_fields_count += len(acc.get("missing_fields", []))
+                incorrect_fields_count += len(acc.get("incorrect_fields", []))
+
+        # Write aggregate stats
+        f.write("## Aggregate Accuracy\n\n")
+
+        # Overall field accuracy
+        if total_fields > 0:
+            overall_acc = matched_fields / total_fields
+            f.write(
+                f"- **Overall Field Accuracy**: {overall_acc:.1%} ({matched_fields}/{total_fields} fields)\n"
+            )
+
+        # Source matching accuracy
+        if total_sources_expected > 0:
+            src_acc = total_sources_matched / total_sources_expected
+            f.write(
+                f"- **Source Matching Rate**: {src_acc:.1%} ({total_sources_matched}/{total_sources_expected} sources)\n"
+            )
+
+        # Field breakdown
+        f.write(f"- **Fields Missing (null when expected)**: {missing_fields_count}\n")
+        f.write(f"- **Fields Incorrect (wrong value)**: {incorrect_fields_count}\n")
+        if unmatched_sources > 0:
+            f.write(
+                f"- **Unmatched Expected Sources**: {unmatched_sources} (no matching actual source found)\n"
+            )
+
+        # LLM evaluation summary (if used)
+        if llm_total_evaluated > 0:
+            f.write("\n### LLM Semantic Evaluation\n\n")
+            f.write(f"- **Fields Evaluated by LLM**: {llm_total_evaluated}\n")
+            f.write(
+                f"- **Semantically Equivalent**: {llm_semantically_matched} ({llm_semantically_matched / llm_total_evaluated:.1%})\n"
+            )
+            f.write(
+                f"- **Adjusted Field Accuracy**: {(matched_fields + llm_semantically_matched) / total_fields:.1%} (after LLM corrections)\n"
+            )
+
+        f.write("\n")
+
+        # Accuracy breakdown by source type
+        if accuracy_by_type:
+            f.write("### Accuracy by Source Type\n\n")
+            f.write(
+                "| Source Type | Sources | Accuracy | Matched | Missing | Incorrect |\n"
+            )
+            f.write(
+                "|-------------|---------|----------|---------|---------|----------|\n"
+            )
+
+            for stype in sorted(accuracy_by_type.keys()):
+                stats = accuracy_by_type[stype]
+                acc_pct = (
+                    stats["matched"] / stats["total"] * 100 if stats["total"] > 0 else 0
+                )
+                f.write(
+                    f"| {stype} | {stats['sources']} | {acc_pct:.0f}% | "
+                    f"{stats['matched']}/{stats['total']} | {stats['missing']} | {stats['incorrect']} |\n"
+                )
+            f.write("\n")
+
+        # Missing sources summary
+        if missing_by_type:
+            f.write("### Missing Sources (Not Extracted)\n\n")
+            for stype, count in sorted(missing_by_type.items(), key=lambda x: -x[1]):
+                f.write(f"- `{stype}`: {count} instances\n")
+            f.write("\n")
+
+        # Extra sources summary (hallucinations)
+        if extra_by_type:
+            f.write("### Extra Sources (Hallucinated)\n\n")
+            for stype, count in sorted(extra_by_type.items(), key=lambda x: -x[1]):
+                f.write(f"- `{stype}`: {count} instances\n")
+            f.write("\n")
 
     def generate_report(self):
         """Generate comprehensive comparison report."""
@@ -416,6 +1019,9 @@ class ExtractionRunner:
                 else 0
             )
             f.write(f"- **Average Completeness**: {avg_completeness:.0%}\n\n")
+
+            # Aggregate accuracy statistics
+            self._write_aggregate_stats(f)
 
             # Detailed case results
             f.write("## Case-by-Case Results\n\n")
@@ -589,6 +1195,11 @@ async def main():
         default=Path("extraction_runs"),
         help="Directory to save results (default: extraction_runs)",
     )
+    parser.add_argument(
+        "--llm-eval",
+        action="store_true",
+        help="Use LLM-based semantic comparison for field evaluation (slower but more accurate)",
+    )
 
     args = parser.parse_args()
 
@@ -619,7 +1230,9 @@ async def main():
         return
 
     # Run extraction
-    runner = ExtractionRunner(args.output_dir)
+    runner = ExtractionRunner(args.output_dir, use_llm_eval=args.llm_eval)
+    if args.llm_eval:
+        logger.info("LLM-based semantic field evaluation ENABLED")
     results = await runner.run(cases)
 
     # Print summary

@@ -119,6 +119,43 @@ class ValidationIssue(BaseModel):
     )
 
 
+# ============================================================================
+# Field Search Agent Models (Agentic Tool Use)
+# ============================================================================
+
+
+class ToolCall(BaseModel):
+    """Record of a single tool call made by the Field Search Agent.
+    
+    Used for explainability - shows exactly what the agent searched for.
+    """
+
+    tool_name: str = Field(..., description="Name of the tool called")
+    parameters: dict = Field(..., description="Parameters passed to the tool")
+    result_summary: str = Field(..., description="Brief summary of results (truncated)")
+
+
+class SearchEvidence(BaseModel):
+    """Complete evidence trail from an agentic field search.
+    
+    Records all tool calls and the final decision for a single field search.
+    """
+
+    field_name: str = Field(..., description="Name of the field that was searched")
+    tool_calls: list[ToolCall] = Field(
+        default_factory=list, description="All tool calls made during the search"
+    )
+    total_calls: int = Field(..., description="Total number of tool calls used")
+    found_value: str | None = Field(
+        None, description="Value found by the agent, or None if not found"
+    )
+    evidence_type: str = Field(
+        ...,
+        description="Type of evidence: EXACT_MATCH, PARTIAL_MATCH, CONTEXTUAL, NO_EVIDENCE",
+    )
+    reasoning: str = Field(..., description="Agent's reasoning about the search results")
+
+
 class PaymentStatus(str, Enum):
     """Status of a payment for unrealized/contingent payments."""
 

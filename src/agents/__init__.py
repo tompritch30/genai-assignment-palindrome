@@ -14,6 +14,7 @@ from src.agents.sow import (
     LotteryWinningsAgent,
     InsurancePayoutAgent,
 )
+from src.agents.field_search_agent import FieldSearchAgent
 from src.agents.metadata_agent import MetadataAgent
 from src.agents.followup_agent import FollowUpQuestionAgent
 from src.agents.orchestrator import Orchestrator
@@ -31,6 +32,7 @@ __all__ = [
     "SaleOfAssetAgent",
     "LotteryWinningsAgent",
     "InsurancePayoutAgent",
+    "FieldSearchAgent",
     "MetadataAgent",
     "FollowUpQuestionAgent",
     "Orchestrator",

@@ -16,6 +16,7 @@ from src.agents.sow import (
     LotteryWinningsAgent,
     PropertySaleAgent,
 )
+from src.agents.field_search_agent import FieldSearchAgent
 from src.agents.followup_agent import FollowUpQuestionAgent
 from src.agents.metadata_agent import MetadataAgent
 from src.agents.validation_agent import ValidationAgent
@@ -26,6 +27,7 @@ from src.models.schemas import (
     ExtractionMetadata,
     ExtractionResult,
     ExtractionSummary,
+    SearchEvidence,
     SourceOfWealth,
     SourceType,
 )
@@ -77,6 +79,9 @@ class Orchestrator:
 
         # Initialize validation agent (for two-step validation)
         self.validation_agent = ValidationAgent()
+
+        # Initialize field search agent (agentic search for missing fields)
+        self.field_search_agent = FieldSearchAgent()
 
         logger.info("Orchestrator initialized successfully")
 
@@ -356,6 +361,159 @@ class Orchestrator:
         # This is a placeholder for future enhancement
         return None
 
+    def _get_required_fields(self, source_type: SourceType) -> set[str]:
+        """Get the set of required fields for a source type.
+
+        These are the "core" fields that should be searched for if missing.
+
+        Args:
+            source_type: The type of source
+
+        Returns:
+            Set of required field names
+        """
+        # Define required fields for each source type
+        # These are the fields most important for SOW compliance
+        required_fields_map = {
+            SourceType.EMPLOYMENT_INCOME: {
+                "employer_name",
+                "job_title",
+                "annual_compensation",
+            },
+            SourceType.SALE_OF_PROPERTY: {
+                "property_address",
+                "sale_date",
+                "sale_proceeds",
+            },
+            SourceType.BUSINESS_INCOME: {
+                "business_name",
+                "nature_of_business",
+                "annual_income_from_business",
+            },
+            SourceType.BUSINESS_DIVIDENDS: {
+                "company_name",
+                "dividend_amount",
+            },
+            SourceType.SALE_OF_BUSINESS: {
+                "business_name",
+                "sale_date",
+                "sale_proceeds",
+            },
+            SourceType.SALE_OF_ASSET: {
+                "asset_description",
+                "sale_proceeds",
+            },
+            SourceType.INHERITANCE: {
+                "deceased_name",
+                "amount_inherited",
+            },
+            SourceType.GIFT: {
+                "donor_name",
+                "gift_value",
+            },
+            SourceType.DIVORCE_SETTLEMENT: {
+                "settlement_amount",
+            },
+            SourceType.LOTTERY_WINNINGS: {
+                "lottery_name",
+                "gross_amount_won",
+            },
+            SourceType.INSURANCE_PAYOUT: {
+                "insurance_provider",
+                "payout_amount",
+            },
+        }
+
+        return required_fields_map.get(source_type, set())
+
+    async def _search_missing_fields(
+        self,
+        narrative: str,
+        sources: list[SourceOfWealth],
+    ) -> tuple[list[SourceOfWealth], list[SearchEvidence]]:
+        """Use Field Search Agent to find missing required fields.
+
+        This is the agentic search step - the agent uses tools to search
+        the narrative for values that the SOW agents didn't extract.
+
+        Args:
+            narrative: The original narrative text
+            sources: List of sources with potentially missing fields
+
+        Returns:
+            Tuple of (updated sources, list of search evidence trails)
+        """
+        all_evidence: list[SearchEvidence] = []
+        total_fields_to_search = 0
+        total_fields_found = 0
+
+        for source in sources:
+            # Get required fields for this source type
+            required_fields = self._get_required_fields(source.source_type)
+
+            # Find which required fields are missing (None or empty)
+            missing_required = []
+            for field_name in required_fields:
+                value = source.extracted_fields.get(field_name)
+                if value is None or value == "":
+                    missing_required.append(field_name)
+
+            if not missing_required:
+                continue
+
+            total_fields_to_search += len(missing_required)
+
+            logger.info(
+                f"Searching for {len(missing_required)} missing required fields "
+                f"in {source.source_id}: {missing_required}"
+            )
+
+            # Use field search agent to find missing fields
+            try:
+                field_results = await self.field_search_agent.search_missing_fields(
+                    narrative=narrative,
+                    source=source,
+                    missing_field_names=missing_required,
+                )
+
+                # Apply found values to the source
+                for field_name, (result, evidence) in field_results.items():
+                    all_evidence.append(evidence)
+
+                    if result.found_value and result.evidence_type in [
+                        "EXACT_MATCH",
+                        "PARTIAL_MATCH",
+                    ]:
+                        # Update the extracted field with the found value
+                        source.extracted_fields[field_name] = result.found_value
+                        total_fields_found += 1
+
+                        logger.info(
+                            f"Field search found {source.source_id}.{field_name}: "
+                            f"'{result.found_value}' ({result.evidence_type})"
+                        )
+
+                        # Remove from missing_fields list if it was there
+                        source.missing_fields = [
+                            mf
+                            for mf in source.missing_fields
+                            if mf.field_name != field_name
+                        ]
+
+            except Exception as e:
+                logger.error(
+                    f"Field search failed for {source.source_id}: {e}",
+                    exc_info=True,
+                )
+
+        if total_fields_to_search > 0:
+            logger.info(
+                f"Field search complete: found {total_fields_found}/{total_fields_to_search} "
+                f"missing required fields"
+            )
+
+        return sources, all_evidence
+
     async def process(self, narrative: str) -> ExtractionResult:
         """Process a narrative and extract all SOW information.
 
@@ -400,16 +558,21 @@ class Orchestrator:
                 )
                 sources = apply_corrections(sources, corrections)
 
-            # Step 6: Deduplication - merge/remove duplicate sources
+            # Step 6: Field Search Agent - find missing required fields
+            sources, search_evidence = await self._search_missing_fields(
+                narrative, sources
+            )
+
+            # Step 7: Deduplication - merge/remove duplicate sources
             sources = deduplicate_sources(sources)
 
-            # Step 7: Detect overlapping sources (same event, multiple sources)
+            # Step 8: Detect overlapping sources (same event, multiple sources)
             sources = detect_overlapping_sources(sources)
 
-            # Step 8: Calculate summary
+            # Step 9: Calculate summary
             summary = calculate_summary(sources)
 
-            # Step 9: Generate follow-up questions using dedicated agent
+            # Step 10: Generate follow-up questions using dedicated agent
             # Create preliminary result for question generation
             preliminary_result = ExtractionResult(
                 metadata=metadata,

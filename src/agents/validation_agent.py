@@ -179,7 +179,21 @@ If the information isn't in the narrative, confirm it's not stated.
                 output_type=ValidationResult,
                 model_settings=model_settings,
             )
-            return result.output
+            
+            # Log reasoning for transparency
+            validation_result = result.output
+            logger.info(
+                f"Validation [{source.source_id}.{field_name}]: "
+                f"value='{validation_result.value}' status={validation_result.status.value}"
+            )
+            if validation_result.reasoning:
+                logger.info(f"  Reasoning: {validation_result.reasoning}")
+            if validation_result.source_quotes:
+                for quote in validation_result.source_quotes[:2]:  # Limit to first 2 quotes
+                    truncated = quote[:100] + "..." if len(quote) > 100 else quote
+                    logger.debug(f"  Quote: \"{truncated}\"")
+            
+            return validation_result
 
         except ModelHTTPError as e:
             if e.status_code == 429:
@@ -266,11 +280,13 @@ If the information isn't in the narrative, confirm it's not stated.
             if result.value != original_value:
                 corrections[key] = result.value
                 logger.info(
-                    f"Corrected {source_id}.{field_name}: "
+                    f"CORRECTED {source_id}.{field_name}: "
                     f"'{original_value}' -> '{result.value}'"
                 )
+                if result.reasoning:
+                    logger.info(f"  Correction reasoning: {result.reasoning}")
             else:
-                logger.debug(f"Confirmed {source_id}.{field_name}: '{result.value}'")
+                logger.info(f"CONFIRMED {source_id}.{field_name}: '{result.value}'")
 
         logger.info(f"Validation complete: {len(corrections)} corrections made")
 

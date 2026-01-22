@@ -246,7 +246,7 @@ def detect_overlapping_sources(
                         other.source_type == SourceType.INSURANCE_PAYOUT
                         and other.source_id != source.source_id
                     ):
-                        policy_type = other.extracted_fields.get("policy_type", "")
+                        policy_type = other.extracted_fields.get("policy_type") or ""
                         if "life" in policy_type.lower():
                             overlapping.append(other.source_id)
                             # Add note
@@ -267,9 +267,12 @@ def detect_overlapping_sources(
                 # Look for other sources from same business
                 for other in sources:
                     if other.source_id != source.source_id:
-                        other_business = other.extracted_fields.get("business_name")
+                        other_business = (
+                            other.extracted_fields.get("business_name") or ""
+                        )
                         if (
                             other_business
+                            and business_name
                             and other_business.lower() == business_name.lower()
                         ):
                             overlapping.append(other.source_id)

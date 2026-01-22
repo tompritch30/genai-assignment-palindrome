@@ -103,7 +103,7 @@ class Orchestrator:
             # Convert to ExtractionMetadata format
             account_type = (
                 AccountType.JOINT
-                if metadata_fields.account_type.lower() == "joint"
+                if (metadata_fields.account_type or "").lower() == "joint"
                 else AccountType.INDIVIDUAL
             )
 
@@ -111,7 +111,7 @@ class Orchestrator:
             holders = None
             if account_type == AccountType.JOINT:
                 # Try to extract from name if it contains "and"
-                if " and " in metadata_fields.account_holder_name.lower():
+                if " and " in (metadata_fields.account_holder_name or "").lower():
                     names = [
                         n.strip()
                         for n in metadata_fields.account_holder_name.split(" and ")

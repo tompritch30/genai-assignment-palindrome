@@ -135,10 +135,10 @@ def is_gift_actually_inheritance(
 
         # Check if donor and deceased are the same person
         if names_match(donor_name, deceased_name):
-            # Check for death-related keywords in gift
-            relationship = gift_fields.get("relationship_to_donor", "").lower()
-            reason = gift_fields.get("reason_for_gift", "").lower()
-            donor_sow = gift_fields.get("donor_source_of_wealth", "").lower()
+            # Check for death-related keywords in gift (handle None values safely)
+            relationship = (gift_fields.get("relationship_to_donor") or "").lower()
+            reason = (gift_fields.get("reason_for_gift") or "").lower()
+            donor_sow = (gift_fields.get("donor_source_of_wealth") or "").lower()
 
             death_keywords = [
                 "passed",
@@ -264,71 +264,93 @@ def deduplicate_sources(
         sources: List of extracted sources
 
     Returns:
-        Deduplicated list of sources
+        Deduplicated list of sources (original list if deduplication fails)
     """
+    if not sources:
+        return sources
+
     logger.info(f"Running deduplication on {len(sources)} sources...")
 
-    # Separate by type
-    inheritance_sources = [
-        s for s in sources if s.source_type == SourceType.INHERITANCE
-    ]
-    gift_sources = [s for s in sources if s.source_type == SourceType.GIFT]
-    other_sources = [
-        s
-        for s in sources
-        if s.source_type not in [SourceType.INHERITANCE, SourceType.GIFT]
-    ]
-
-    # Step 1: Remove gifts that are actually inheritances
-    valid_gifts = []
-    removed_gift_ids = set()
-
-    for gift in gift_sources:
-        if is_gift_actually_inheritance(gift, inheritance_sources):
-            removed_gift_ids.add(gift.source_id)
-            logger.info(f"Removing duplicate gift source: {gift.source_id}")
-        else:
-            valid_gifts.append(gift)
-
-    # Step 2: Merge inheritances from same deceased
-    merged_inheritances = []
-    processed_ids: set[str] = set()
-
-    for inherit in inheritance_sources:
-        if inherit.source_id in processed_ids:
-            continue
-
-        # Find all inheritances from same deceased
-        related = [
+    try:
+        # Separate by type
+        inheritance_sources = [
+            s for s in sources if s.source_type == SourceType.INHERITANCE
+        ]
+        gift_sources = [s for s in sources if s.source_type == SourceType.GIFT]
+        other_sources = [
             s
-            for s in inheritance_sources
-            if s.source_id not in processed_ids
-            and should_merge_inheritance_sources(inherit, s)
+            for s in sources
+            if s.source_type not in [SourceType.INHERITANCE, SourceType.GIFT]
         ]
 
-        for s in related:
-            processed_ids.add(s.source_id)
+        # Step 1: Remove gifts that are actually inheritances
+        valid_gifts = []
+        removed_gift_ids = set()
 
-        if len(related) > 1:
-            merged = merge_inheritance_sources(related)
-            merged_inheritances.append(merged)
-            logger.info(
-                f"Merged {len(related)} inheritance sources into {merged.source_id}"
-            )
-        else:
-            merged_inheritances.append(inherit)
+        for gift in gift_sources:
+            try:
+                if is_gift_actually_inheritance(gift, inheritance_sources):
+                    removed_gift_ids.add(gift.source_id)
+                    logger.info(f"Removing duplicate gift source: {gift.source_id}")
+                else:
+                    valid_gifts.append(gift)
+            except Exception as e:
+                logger.warning(
+                    f"Error checking gift {gift.source_id} for inheritance overlap: {e}"
+                )
+                valid_gifts.append(gift)  # Keep the gift if check fails
 
-    # Combine all sources
-    deduplicated = other_sources + merged_inheritances + valid_gifts
+        # Step 2: Merge inheritances from same deceased
+        merged_inheritances = []
+        processed_ids: set[str] = set()
 
-    # Reassign source IDs to be sequential
-    for i, source in enumerate(deduplicated, 1):
-        # We can't modify source_id directly as it's part of the model
-        # So we just log the deduplication results
-        pass
+        for inherit in inheritance_sources:
+            if inherit.source_id in processed_ids:
+                continue
 
-    removed_count = len(sources) - len(deduplicated)
-    if removed_count > 0:
-        logger.info(f"Deduplication removed/merged {removed_count} sources")
+            try:
+                # Find all inheritances from same deceased
+                related = [
+                    s
+                    for s in inheritance_sources
+                    if s.source_id not in processed_ids
+                    and should_merge_inheritance_sources(inherit, s)
+                ]
 
-    return deduplicated
+                for s in related:
+                    processed_ids.add(s.source_id)
+
+                if len(related) > 1:
+                    merged = merge_inheritance_sources(related)
+                    merged_inheritances.append(merged)
+                    logger.info(
+                        f"Merged {len(related)} inheritance sources into {merged.source_id}"
+                    )
+                else:
+                    merged_inheritances.append(inherit)
+            except Exception as e:
+                logger.warning(f"Error merging inheritance {inherit.source_id}: {e}")
+                if inherit.source_id not in processed_ids:
+                    merged_inheritances.append(inherit)
+                    processed_ids.add(inherit.source_id)
+
+        # Combine all sources
+        deduplicated = other_sources + merged_inheritances + valid_gifts
+
+        # Reassign source IDs to be sequential
+        for i, source in enumerate(deduplicated, 1):
+            # We can't modify source_id directly as it's part of the model
+            # So we just log the deduplication results
+            pass
+
+        removed_count = len(sources) - len(deduplicated)
+        if removed_count > 0:
+            logger.info(f"Deduplication removed/merged {removed_count} sources")
+
+        return deduplicated
+
+    except Exception as e:
+        logger.error(
+            f"Deduplication failed, returning original sources: {e}", exc_info=True
+        )
+        return sources

@@ -30,8 +30,8 @@ Extract ALL property sales mentioned in the client narrative, including:
 Provide CONTEXT and DETAIL in field values to make compliance review easier:
 
 For property_address:
-- Include area and city/region: "Kensington, London", "Cotswolds, Gloucestershire"
-- International: "Monaco", "Marbella, Spain"
+- Include area and city/region: "Hampstead, North London", "Surrey countryside"
+- International: "South of France", "Costa del Sol, Spain"
 - If partial: "South London (exact address not stated)"
 
 For property_type:

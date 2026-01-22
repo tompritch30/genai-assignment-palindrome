@@ -45,7 +45,7 @@ The ONLY time to return empty is if the account holder's employment is truly not
 
 ## COUNTRY OF EMPLOYMENT - INFERENCE RULES
 If country_of_employment is not explicitly stated, INFER it from context:
-- UK company names (Ltd, PLC, NHS, British...) → "United Kingdom (inferred)"
+- UK company names (Ltd, PLC, British...) → "United Kingdom (inferred)"
 - GBP/£ salary amounts → "United Kingdom (inferred)"
 - US company names (Inc, Corp, LLC) → "United States (inferred)"
 - UAE/Dubai context → "United Arab Emirates (inferred)"

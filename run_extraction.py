@@ -29,7 +29,12 @@ from pydantic_ai import Agent
 from src.agents.orchestrator import Orchestrator
 from src.loaders.document_loader import DocumentLoader
 from src.models.schemas import ExtractionResult
-from src.utils.logging_config import get_logger, setup_logging
+from src.utils.logging_config import (
+    add_run_file_handler,
+    get_logger,
+    remove_run_file_handler,
+    setup_logging,
+)
 
 setup_logging()
 logger = get_logger(__name__)
@@ -48,23 +53,38 @@ class FieldComparisonResult(BaseModel):
 class LLMFieldEvaluator:
     """Uses LLM to evaluate if two field values are semantically equivalent."""
 
-    def __init__(self, model: str = "openai:gpt-4o-mini"):
-        """Initialize evaluator with a cheaper/faster model for judging."""
+    def __init__(self, model: str = "openai:gpt-4.1-mini"):
+        """Initialize evaluator with a model for semantic comparison."""
         self._agent = Agent(
             model=model,
             instructions="""You are an expert evaluator comparing extracted field values for KYC/AML compliance.
 
 Your task is to determine if two values for the same field are SEMANTICALLY EQUIVALENT.
 
-Rules:
-1. Synonyms are equivalent: "spouse" = "wife" = "husband", "father" = "dad"
-2. Same information in different words is equivalent
-3. More detail is BETTER, not wrong: "June 2022" is better than "2022"
-4. Number formats are equivalent: "£1.2 million" = "£1,200,000" = "£1200000"
-5. Minor wording differences are equivalent if meaning is same
-6. Missing key information means NOT equivalent
+## CRITICAL: MORE DETAIL = EQUIVALENT
 
-Be strict about core facts but lenient about phrasing.""",
+If ACTUAL contains the same core information as EXPECTED but with MORE DETAIL, they ARE EQUIVALENT.
+
+Examples of EQUIVALENT values:
+- "employment savings" vs "savings from McKinsey earnings" → EQUIVALENT (same thing, more specific)
+- "June 2022" vs "2022" → EQUIVALENT (more precise date)
+- "father" vs "William Smith (father)" → EQUIVALENT (name added)
+- "£1.2 million" vs "£1,200,000" → EQUIVALENT (same amount)
+- "Residential property" vs "Residential - Primary home (four-bedroom house)" → EQUIVALENT (more detail)
+
+Examples of NOT EQUIVALENT:
+- "£500,000" vs "£300,000" → NOT equivalent (different amounts)
+- "father" vs "uncle" → NOT equivalent (different relationship)
+- "2019" vs "2022" → NOT equivalent (different years)
+
+## Rules
+1. If ACTUAL says the same thing as EXPECTED but more specifically → EQUIVALENT
+2. If ACTUAL adds context/detail to EXPECTED → EQUIVALENT  
+3. Synonyms are equivalent: "spouse" = "wife" = "husband"
+4. Number formats are equivalent: "£1.2 million" = "£1,200,000"
+5. Only mark NOT equivalent if the CORE FACTS differ
+
+Be LENIENT - if the information is correct, just more detailed, it's EQUIVALENT.""",
             retries=2,
         )
         self._cache: dict[tuple[str, str, str], FieldComparisonResult] = {}
@@ -148,6 +168,9 @@ class ExtractionRunner:
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.run_dir = self.output_dir / f"run_{self.run_timestamp}"
         self.run_dir.mkdir(exist_ok=True)
+        
+        # Add file logging to the run directory
+        self._run_log_handler = add_run_file_handler(self.run_dir)
 
         self.orchestrator = Orchestrator()
         self.results = []
@@ -414,18 +437,20 @@ class ExtractionRunner:
             for expected_source in expected_list:
                 if not actual_list:
                     # No more actual sources of this type to match
-                    # Record unmatched expected source
+                    # Record unmatched expected source with full ground truth
+                    expected_fields = expected_source.get("extracted_fields", {})
                     comparison["field_accuracy"].append(
                         {
                             "source_type": stype,
+                            "status": "NOT_EXTRACTED",
+                            "explanation": "Expected this source but we did not extract it",
+                            "expected_source_id": expected_source.get("source_id"),
+                            "expected_description": expected_source.get("description"),
+                            "ground_truth_fields": expected_fields,
                             "accuracy": {
-                                "total_fields": len(
-                                    expected_source.get("extracted_fields", {})
-                                ),
+                                "total_fields": len(expected_fields),
                                 "matched_fields": 0,
-                                "missing_fields": list(
-                                    expected_source.get("extracted_fields", {}).keys()
-                                ),
+                                "missing_fields": list(expected_fields.keys()),
                                 "incorrect_fields": [],
                                 "accuracy_rate": 0.0,
                                 "unmatched": True,
@@ -477,18 +502,20 @@ class ExtractionRunner:
                         }
                     )
                 else:
-                    # No good match found - record as unmatched
+                    # No good match found - record as unmatched with full ground truth
+                    expected_fields = expected_source.get("extracted_fields", {})
                     comparison["field_accuracy"].append(
                         {
                             "source_type": stype,
+                            "status": "NOT_EXTRACTED",
+                            "explanation": "Expected this source but we did not extract it",
+                            "expected_source_id": expected_source.get("source_id"),
+                            "expected_description": expected_source.get("description"),
+                            "ground_truth_fields": expected_fields,
                             "accuracy": {
-                                "total_fields": len(
-                                    expected_source.get("extracted_fields", {})
-                                ),
+                                "total_fields": len(expected_fields),
                                 "matched_fields": 0,
-                                "missing_fields": list(
-                                    expected_source.get("extracted_fields", {}).keys()
-                                ),
+                                "missing_fields": list(expected_fields.keys()),
                                 "incorrect_fields": [],
                                 "accuracy_rate": 0.0,
                                 "unmatched": True,
@@ -612,8 +639,10 @@ class ExtractionRunner:
         field_comparison = {
             "total_fields": len(expected_fields),
             "matched_fields": 0,
-            "missing_fields": [],
-            "incorrect_fields": [],
+            "matched_field_names": [],  # Which fields matched
+            "missing_fields": [],  # Fields we didn't extract but should have
+            "incorrect_fields": [],  # Fields with wrong values
+            "extra_fields": [],  # Fields we extracted but weren't expected
             "pending_llm_eval": [],  # Fields to evaluate with LLM
         }
 
@@ -621,9 +650,16 @@ class ExtractionRunner:
             actual_value = actual_fields.get(field_name)
 
             if actual_value is None:
-                field_comparison["missing_fields"].append(field_name)
+                # We didn't extract this field but should have
+                field_comparison["missing_fields"].append({
+                    "field": field_name,
+                    "expected": expected_value,
+                    "actual": None,
+                    "issue": "NOT_EXTRACTED"
+                })
             elif self._values_match(actual_value, expected_value):
                 field_comparison["matched_fields"] += 1
+                field_comparison["matched_field_names"].append(field_name)
             else:
                 # String match failed - queue for LLM evaluation if enabled
                 field_comparison["incorrect_fields"].append(
@@ -631,6 +667,7 @@ class ExtractionRunner:
                         "field": field_name,
                         "expected": expected_value,
                         "actual": actual_value,
+                        "issue": "VALUE_MISMATCH"
                     }
                 )
                 # Mark for LLM evaluation
@@ -638,6 +675,17 @@ class ExtractionRunner:
                     field_comparison["pending_llm_eval"].append(
                         (field_name, str(expected_value), str(actual_value))
                     )
+        
+        # Check for extra fields we extracted that weren't expected
+        for field_name, actual_value in actual_fields.items():
+            if field_name not in expected_fields and actual_value is not None:
+                expected_was_null = expected_fields.get(field_name) is None
+                field_comparison["extra_fields"].append({
+                    "field": field_name,
+                    "expected": None,
+                    "actual": actual_value,
+                    "issue": "EXTRA_EXTRACTION" if expected_was_null else "UNEXPECTED_FIELD"
+                })
 
         if field_comparison["total_fields"] > 0:
             field_comparison["accuracy_rate"] = (
@@ -1091,8 +1139,13 @@ class ExtractionRunner:
                             )
 
                             if acc["missing_fields"]:
+                                # Extract field names (now list of dicts)
+                                missing_names = [
+                                    m["field"] if isinstance(m, dict) else m 
+                                    for m in acc["missing_fields"]
+                                ]
                                 f.write(
-                                    f"      - Missing: {', '.join(acc['missing_fields'])}\n"
+                                    f"      - Missing: {', '.join(missing_names)}\n"
                                 )
 
                             if acc["incorrect_fields"]:
@@ -1100,6 +1153,13 @@ class ExtractionRunner:
                                 for inc in acc["incorrect_fields"]:
                                     f.write(
                                         f"        - `{inc['field']}`: Expected `{inc['expected']}`, Got `{inc['actual']}`\n"
+                                    )
+                            
+                            if acc.get("extra_fields"):
+                                f.write("      - Extra (unexpected):\n")
+                                for extra in acc["extra_fields"]:
+                                    f.write(
+                                        f"        - `{extra['field']}`: Extracted `{extra['actual']}` (expected null)\n"
                                     )
 
                 f.write("\n")
@@ -1139,6 +1199,11 @@ class ExtractionRunner:
 
         logger.info(f"Run complete! Results saved to: {self.run_dir}")
         logger.info(f"Comparison report: {report_path}")
+        
+        # Clean up run-specific file handler
+        if self._run_log_handler:
+            remove_run_file_handler(self._run_log_handler)
+            self._run_log_handler = None
 
         return self.results
 

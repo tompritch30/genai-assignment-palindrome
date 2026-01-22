@@ -1,0 +1,127 @@
+# Field Search Agent - Additional Guidance
+
+This file provides field-specific search strategies to help find common SOW fields.
+
+## Search Strategies by Source Type
+
+### Employment Income Fields
+
+**employer_name**:
+- search_entities("ORG") first to find all organizations
+- search_context(["worked", "employed", "job", "career", "company", "firm"])
+
+**job_title**:
+- search_context(["title", "role", "position", "as a", "as an"])
+- Look for capitalized job titles near the employer name
+
+**annual_compensation**:
+- search_entities("MONEY") to find all amounts
+- search_context(["salary", "annual", "earning", "compensation", "paid", "income"])
+
+**employment_start_date**:
+- search_entities("DATE") to find all dates
+- search_context(["started", "joined", "began", "since", "from"])
+
+**country_of_employment**:
+- search_entities("LOCATION")
+- search_context(["based", "office", "located", "country"])
+
+### Inheritance Fields
+
+**deceased_name**:
+- search_entities("PERSON")
+- search_context(["died", "passed away", "deceased", "late", "death"])
+
+**amount_inherited**:
+- search_entities("MONEY")
+- search_context(["inherited", "received", "left", "bequeathed", "estate"])
+
+**date_of_death**:
+- search_entities("DATE")
+- search_context(["died", "passed", "death", "deceased"])
+
+**relationship_to_deceased**:
+- search_context(["father", "mother", "parent", "spouse", "uncle", "aunt", "grandparent"])
+
+### Gift Fields
+
+**donor_name**:
+- search_entities("PERSON")
+- search_context(["gave", "gifted", "gift from", "received from", "donor"])
+
+**gift_value**:
+- search_entities("MONEY")
+- search_context(["gift", "gave", "received", "transferred"])
+
+**donor_source_of_wealth**:
+- search_context(["donor's", "their wealth", "they earned", "their career"])
+
+### Business Sale Fields
+
+**business_name**:
+- search_entities("ORG")
+- search_context(["sold", "business", "company", "sale of"])
+
+**sale_proceeds**:
+- search_entities("MONEY")
+- search_context(["sold for", "proceeds", "sale price", "received"])
+
+**buyer_identity**:
+- search_entities("ORG")
+- search_context(["purchased by", "buyer", "acquired by", "sold to"])
+
+### Property Sale Fields
+
+**property_address**:
+- search_entities("LOCATION")
+- search_context(["property", "house", "flat", "apartment", "home", "located"])
+
+**sale_proceeds**:
+- search_entities("MONEY")
+- search_context(["sold for", "sale price", "proceeds"])
+
+**original_purchase_price**:
+- search_entities("MONEY")
+- search_context(["bought for", "purchased for", "paid", "original"])
+
+## Common Pitfalls to Avoid
+
+1. **Don't confuse different people's information**
+   - The account holder's employment vs their spouse's employment
+   - The deceased's career vs the beneficiary's career
+
+2. **Don't conflate different amounts**
+   - Gross vs net amounts
+   - Sale price vs original purchase price
+   - One-time payment vs annual amount
+
+3. **Watch for temporal context**
+   - Past employment vs current employment
+   - Multiple dates for different events
+
+4. **When to report NO_EVIDENCE**
+   - After trying at least 2-3 different search strategies
+   - When only tangentially related information is found
+   - When the information would need to be inferred rather than read directly
+
+## Enriched Field Values - ALWAYS Include Context
+
+When extracting field values, include ALL relevant context from the narrative.
+More detail is ALWAYS better than less for compliance review.
+
+**Good examples:**
+- deceased_name: "Margaret Wilson (mother)" not just "Margaret Wilson"
+- amount_inherited: "~£500,000 (£300,000 property + £200,000 investments)"
+- sale_proceeds: "£580,000 (net after mortgage repayment of £180,000 and costs)"
+- employment_end_date: "Present (or recently retired)" if uncertain
+- property_type: "Residential - Primary home (four-bedroom Victorian house)"
+- original_source_of_deceased_wealth: "35-year career as hospital consultant; consistent saving"
+- donor_source_of_wealth: "Sale of manufacturing business (Acme Industries) in 2005 for approximately £3 million"
+
+**Bad examples (too sparse):**
+- deceased_name: "Margaret Wilson" (missing relationship)
+- amount_inherited: "£500,000" (missing breakdown)
+- sale_proceeds: "£580,000" (missing net/gross context)
+- employment_end_date: "Present" (missing qualifiers)
+
+If you find a value, report it with MAXIMUM relevant context from the surrounding text.

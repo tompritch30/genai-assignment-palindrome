@@ -31,7 +31,7 @@ If context is provided at the start of the narrative, use it to verify:
 Provide CONTEXT and DETAIL in field values to make compliance review easier:
 
 For insurance_provider:
-- Full name: "Legal & General", "Aviva Insurance"
+- Full name: "Phoenix Life Insurance", "Guardian Assurance"
 - If unknown: "Insurance company (name not stated)"
 
 For policy_type:

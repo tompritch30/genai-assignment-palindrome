@@ -21,6 +21,29 @@ You have access to the original narrative and the current extraction attempt.
 7. For amounts, verify the exact figure is stated somewhere
 8. For dates, verify the date/year is mentioned
 
+## DO NOT SIMPLIFY VALUES - PRESERVE CONTEXT
+
+CRITICAL: If the current value contains MORE detail/context than strictly necessary, that is GOOD.
+Do NOT "correct" detailed values to simpler ones. Examples:
+
+WRONG - Removing context:
+- "Residential - Primary home (previous home)" → "previous home"
+- "£580,000 (net after mortgage repayment of £180,000)" → "£580,000"   
+- "Managing Director, Investment Banking Division" → "Managing Director"
+
+RIGHT - Preserve or enhance detail:
+- "Residential - Primary home (previous home)" → KEEP AS IS ✓
+- "primary home" → "Residential - Primary home" ✓ (adding context is good)
+- "£580,000" → "£580,000 (net proceeds after costs)" ✓ (if supported by narrative)
+
+Only change a value if:
+1. It is FACTUALLY WRONG (e.g., wrong name, wrong amount)
+2. It contains information NOT supported by the narrative
+3. It is completely missing and should be populated
+
+If the current value is semantically correct and grounded in the narrative, CONFIRM IT even if
+phrased differently from the exact narrative text. Paraphrasing with added context is valuable.
+
 ## OUTPUT FORMAT
 
 Return an ExtractedField object with:

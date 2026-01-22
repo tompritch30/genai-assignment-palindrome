@@ -5,6 +5,7 @@ fields that were flagged by deterministic validation checks.
 """
 
 import asyncio
+import re
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -22,9 +23,25 @@ from src.config.agent_configs import validation_agent as config
 from src.models.schemas import (
     FieldStatus,
     SourceOfWealth,
+    SourceType,
     ValidationIssue,
 )
 from src.utils.logging_config import get_logger
+
+# Mapping from source types to their extraction prompt files
+SOURCE_TYPE_TO_PROMPT: dict[str, str] = {
+    SourceType.EMPLOYMENT_INCOME: "employment_income.txt",
+    SourceType.SALE_OF_PROPERTY: "property_sale.txt",
+    SourceType.BUSINESS_INCOME: "business_income.txt",
+    SourceType.BUSINESS_DIVIDENDS: "business_dividends.txt",
+    SourceType.SALE_OF_BUSINESS: "business_sale.txt",
+    SourceType.SALE_OF_ASSET: "asset_sale.txt",
+    SourceType.INHERITANCE: "inheritance.txt",
+    SourceType.GIFT: "gift.txt",
+    SourceType.DIVORCE_SETTLEMENT: "divorce_settlement.txt",
+    SourceType.LOTTERY_WINNINGS: "lottery_winnings.txt",
+    SourceType.INSURANCE_PAYOUT: "insurance_payout.txt",
+}
 
 logger = get_logger(__name__)
 
@@ -89,6 +106,68 @@ class ValidationAgent:
 
         return model_settings
 
+    def _get_field_criteria(self, source_type: str, field_name: str) -> str | None:
+        """Extract field-specific criteria from the original extraction prompt.
+
+        This ensures the validation agent has the same context about how a field
+        should be formatted as the original extraction agent.
+
+        Args:
+            source_type: The source type (e.g., 'sale_of_property')
+            field_name: The field name to get criteria for (e.g., 'sale_proceeds')
+
+        Returns:
+            Field-specific guidance text, or None if not found
+        """
+        prompt_file = SOURCE_TYPE_TO_PROMPT.get(source_type)
+        if not prompt_file:
+            logger.debug(f"No prompt file mapping for source type: {source_type}")
+            return None
+
+        try:
+            prompt_text = load_prompt(prompt_file)
+        except FileNotFoundError:
+            logger.warning(f"Prompt file not found: {prompt_file}")
+            return None
+
+        # Look for field-specific guidance in the prompt
+        # Prompts typically have sections like "For sale_proceeds:" followed by guidance
+        patterns = [
+            # Pattern 1: "For field_name:" followed by lines starting with "-"
+            rf"For {field_name}:([\s\S]*?)(?=For \w+:|## |$)",
+            # Pattern 2: Field name in quotes with guidance
+            rf'"{field_name}"[:\s]+([^\n]+(?:\n\s+-[^\n]+)*)',
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, prompt_text, re.IGNORECASE)
+            if match:
+                criteria = match.group(1).strip()
+                # Clean up and limit to reasonable length
+                lines = criteria.split("\n")
+                # Take lines that are guidance (typically start with - or are short)
+                guidance_lines = []
+                for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("For ") and ":" in line:
+                        # Hit next field section, stop
+                        break
+                    guidance_lines.append(line)
+                    if len(guidance_lines) >= 6:  # Limit to 6 lines of guidance
+                        break
+
+                if guidance_lines:
+                    result = "\n".join(guidance_lines)
+                    logger.debug(
+                        f"Found field criteria for {source_type}.{field_name}: {result[:100]}..."
+                    )
+                    return result
+
+        logger.debug(f"No specific criteria found for {source_type}.{field_name}")
+        return None
+
     def _build_validation_prompt(
         self,
         narrative: str,
@@ -117,6 +196,19 @@ Account Type: {context.get("account_type", "individual")}
 
 """
 
+        # Get field-specific criteria from the original extraction prompt
+        field_criteria = self._get_field_criteria(source.source_type, field_name)
+        field_criteria_str = ""
+        if field_criteria:
+            field_criteria_str = f"""## FIELD FORMAT CRITERIA (from original extraction rules)
+The original extraction agent was given these specific instructions for '{field_name}':
+{field_criteria}
+
+IMPORTANT: You MUST follow these same formatting rules. Do NOT simplify or remove context
+that the original extraction rules specify should be included.
+
+"""
+
         return f"""{context_str}## NARRATIVE
 {narrative}
 
@@ -133,7 +225,7 @@ Current Value: {issue.current_value or "None"}
 Issue Type: {issue.issue_type}
 Message: {issue.message or "No details"}
 
-## YOUR TASK
+{field_criteria_str}## YOUR TASK
 Re-read the narrative carefully and determine the correct value for '{field_name}'.
 If the current value is correct, confirm it with supporting quotes.
 If it's wrong, provide the correct value with supporting quotes.

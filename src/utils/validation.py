@@ -15,15 +15,17 @@ from src.utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def normalize_text(text: str) -> str:
+def normalize_text(text: str | None) -> str:
     """Normalize text for comparison.
 
     Args:
-        text: Input text
+        text: Input text (can be None)
 
     Returns:
-        Lowercase text with normalized whitespace
+        Lowercase text with normalized whitespace, empty string if None
     """
+    if not text:
+        return ""
     return re.sub(r"\s+", " ", text.lower().strip())
 
 

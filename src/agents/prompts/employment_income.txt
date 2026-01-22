@@ -15,7 +15,10 @@ If context is provided at the start of the narrative, use it to verify:
       - E.g. If you are a director at your own business, this is NOT employment income
    - Dividends from company they own → BUSINESS_DIVIDENDS (not employment)
    - W-2/PAYE employment at company they DON'T own → EMPLOYMENT (valid)
-3. CONSOLIDATION: Multiple roles at SAME company = ONE entry with most complete info
+3. MULTIPLE ROLES: Distinct employment periods = SEPARATE entries
+   - "Associate Partner 2010-2013, then Partner from 2014" = TWO entries
+   - Different compensation, different roles = separate extractions
+   - Same employer but different periods/titles/compensation = separate sources
 4. EXTRACT: Only if entity check passes and this is true employment
 
 ## CRITICAL RULES
@@ -26,12 +29,16 @@ If context is provided at the start of the narrative, use it to verify:
 2. EMPLOYMENT vs BUSINESS: If account holder OWNS the business:
    - Salary from own company → business_income (not employment_income)
    - This agent is for third-party employer relationships only
-3. CONSOLIDATE: If same employer with role changes, create ONE entry:
-   - "Started as analyst, now VP at same firm" = ONE entry
-4. Extract EXACTLY what is stated - do NOT infer or calculate
-5. If vague (e.g., "good salary"), capture the LITERAL text
+3. SEPARATE PERIODS: Create separate entries for distinct employment periods:
+   - "Started as analyst 2008-2010, now VP 2010-2023 at same firm" = TWO entries
+   - Different compensation levels across periods = separate sources
+   - Different titles/roles = separate sources
+4. Prefer what is stated; do NOT guess or invent facts
+   - You MAY make conservative inferences ONLY when the narrative provides strong contextual evidence
+   - If you infer, label it explicitly in the field value, e.g. "(inferred)" or "(implied)"
+5. If vague (e.g., "good salary"), capture the LITERAL text (this is NOT inference)
 6. Return empty list if no employment of account holder mentioned
-7. Set fields to null if not stated
+7. Set fields to null if not stated AND not safely inferrable from strong context
 8. Do NOT create entries where ALL fields are null
 
 ## EXTRACT EMPLOYMENT EVEN WHEN MENTIONED AS CONTEXT
@@ -45,14 +52,20 @@ If employment details are sparse, still create an entry with available fields (j
 The ONLY time to return empty is if the account holder's employment is truly not mentioned at all.
 
 ## COUNTRY OF EMPLOYMENT - INFERENCE RULES
-If country_of_employment is not explicitly stated, you may potentially INFER it from context, if confident:
+If country_of_employment is not explicitly stated, you may INFER it ONLY when the context is strong and specific.
+
 - UK company names (Ltd, PLC, British...) → "United Kingdom (inferred)"
 - GBP/£ salary amounts → "United Kingdom (inferred)"
 - US company names (Inc, Corp, LLC) → "United States (inferred)"
 - UAE/Dubai context → "United Arab Emirates (inferred)"
 - They discuss living in the country when related to other actions, at the same time
+
 If it is an international company with offices across the world, then you cannot infer
 Else put None
+
+Examples:
+- "I moved to London ... I was previously a consultant for 2 years." → "United Kingdom (London) (inferred)"
+
 
 
 ## FIELD FORMAT GUIDANCE
@@ -68,15 +81,18 @@ For job_title:
 
 For employment_start_date:
 - Include role context if relevant: "March 2015 (as Senior Manager); 2010 (as Junior Associate)"
-- If career progression at same employer, capture key milestones
+- If multiple roles at same employer over time, ONLY include dates for THIS entry's role
+- For "2010 (as Associate Partner)" entry → use 2010 as start_date, not 2014
 
 For employment_end_date:
 - "Present" for current employment
+- If this role ended, use the actual end date (e.g., "2013" if moved to Partner role in 2014)
 - If implied but not explicit: "Present (implied)"
 
 For annual_compensation:
 - Include breakdown if provided: "£200,000 (£150,000 base + £50,000 bonus)"
 - Include qualifiers: "£180,000 (final salary)", "~£1,000,000 in final years"
+- Include multiple roles if relevant to the period being described: "£450,000 (current, as Partner; previously £280,000 as Associate Partner)" BUT only in CONTEXT of showing both roles in SEPARATE entries
 - For career totals if mentioned: "~£800,000 in final years; £8,000,000+ total career earnings"
 - If vague, then choose the description e.g. "Described as 'good salary' - no figure provided"
 
@@ -89,6 +105,9 @@ For country_of_employment:
 - "My father was CEO at Tech Corp" → SKIP (father's job, not account holder's)
 - "I founded my own consultancy and pay myself a salary" → SKIP (own business = business_income)
 - "I've worked in finance for 20 years" → employer_name=null, job_title=null (insufficient detail, skip)
+- "I was Associate Partner at McKinsey 2010-2013, then promoted to Partner in 2014, currently earning £450k" → TWO ENTRIES:
+  * Entry 1: employer_name="McKinsey & Company", job_title="Associate Partner", employment_start_date="2010", employment_end_date="2013", annual_compensation="£280,000" (or null if not stated for that period)
+  * Entry 2: employer_name="McKinsey & Company", job_title="Partner", employment_start_date="January 2014", employment_end_date="Present", annual_compensation="£450,000 (including base, bonus, and profit share)"
 
 ## POST-ACQUISITION CONSULTANCY & RETENTION BONUSES
 IMPORTANT: If account holder sold their business and then worked as a CONSULTANT or received RETENTION BONUS from the buyer:

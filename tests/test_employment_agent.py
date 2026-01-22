@@ -30,8 +30,8 @@ class TestEmploymentIncomeAgent:
         agent = EmploymentIncomeAgent()
         instructions = agent.instructions.lower()
 
-        # Check for key rules
-        assert "extract exactly" in instructions or "do not infer" in instructions
-        assert "literal" in instructions or "exactly as written" in instructions
+        # Check for key rules - verify instructions have guidance about extraction behavior
+        assert "do not guess" in instructions or "do not infer" in instructions or "not stated" in instructions
+        assert "literal" in instructions or "exactly as written" in instructions or "as stated" in instructions
         assert "empty list" in instructions or "no employment" in instructions
         assert "null" in instructions or "not stated" in instructions

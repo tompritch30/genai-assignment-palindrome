@@ -752,15 +752,18 @@ class ExtractionRunner:
 
         # Collect all pending LLM evaluations from source comparisons
         all_pending: list[
-            tuple[str, str, str, int, int]
-        ] = []  # (field, expected, actual, src_idx, field_idx)
+            tuple[str, str, str, int, int, str]
+        ] = []  # (field, expected, actual, src_idx, field_idx, source_type)
 
         src_comp = comparison.get("sources", {})
         for src_idx, src_acc in enumerate(src_comp.get("field_accuracy", [])):
+            source_type = src_acc.get("source_type", "unknown")
             acc = src_acc.get("accuracy", {})
             pending = acc.get("pending_llm_eval", [])
             for field_idx, (field_name, expected, actual) in enumerate(pending):
-                all_pending.append((field_name, expected, actual, src_idx, field_idx))
+                all_pending.append(
+                    (field_name, expected, actual, src_idx, field_idx, source_type)
+                )
 
         if not all_pending:
             return comparison
@@ -770,18 +773,22 @@ class ExtractionRunner:
         )
 
         # Run LLM comparisons in batch
-        comparisons_input = [(f, e, a) for f, e, a, _, _ in all_pending]
+        comparisons_input = [(f, e, a) for f, e, a, _, _, _ in all_pending]
         llm_results = await self.llm_evaluator.compare_fields_batch(comparisons_input)
 
         # Update the comparison results
         llm_matched = 0
         llm_details = []
+        llm_corrected_by_type: dict[str, int] = {}  # Track corrections per source type
 
-        for (field_name, expected, actual, src_idx, _), result in zip(
+        for (field_name, expected, actual, src_idx, _, source_type), result in zip(
             all_pending, llm_results
         ):
             if result.equivalent:
                 llm_matched += 1
+                llm_corrected_by_type[source_type] = (
+                    llm_corrected_by_type.get(source_type, 0) + 1
+                )
                 # Move from incorrect to matched
                 src_acc = src_comp["field_accuracy"][src_idx]
                 acc = src_acc["accuracy"]
@@ -797,6 +804,7 @@ class ExtractionRunner:
             llm_details.append(
                 {
                     "field": field_name,
+                    "source_type": source_type,
                     "expected": expected[:100],  # Truncate for readability
                     "actual": actual[:100],
                     "equivalent": result.equivalent,
@@ -809,6 +817,7 @@ class ExtractionRunner:
         comparison["llm_evaluation"] = {
             "total_evaluated": len(all_pending),
             "semantically_matched": llm_matched,
+            "corrected_by_type": llm_corrected_by_type,  # Pre-aggregated for easy use
             "details": llm_details,
         }
 
@@ -965,6 +974,8 @@ class ExtractionRunner:
                 extra_by_type[stype] = extra_by_type.get(stype, 0) + 1
 
             # Field-level accuracy by source type
+            # NOTE: These stats already include LLM evaluation corrections since
+            # _run_llm_evaluations updates matched_fields and removes from incorrect_fields
             for src_acc in src_comp.get("field_accuracy", []):
                 stype = src_acc.get("source_type", "unknown")
                 acc = src_acc.get("accuracy", {})
@@ -976,6 +987,7 @@ class ExtractionRunner:
                         "missing": 0,
                         "incorrect": 0,
                         "sources": 0,
+                        "llm_corrected": 0,  # Track LLM semantic matches
                     }
 
                 accuracy_by_type[stype]["total"] += acc.get("total_fields", 0)
@@ -993,6 +1005,11 @@ class ExtractionRunner:
                 matched_fields += acc.get("matched_fields", 0)
                 missing_fields_count += len(acc.get("missing_fields", []))
                 incorrect_fields_count += len(acc.get("incorrect_fields", []))
+
+            # Add LLM corrections by source type (pre-computed during LLM evaluation)
+            for stype, count in llm_eval.get("corrected_by_type", {}).items():
+                if stype in accuracy_by_type:
+                    accuracy_by_type[stype]["llm_corrected"] += count
 
         # Write aggregate stats
         f.write("## Aggregate Accuracy\n\n")
@@ -1036,10 +1053,14 @@ class ExtractionRunner:
         if accuracy_by_type:
             f.write("### Accuracy by Source Type\n\n")
             f.write(
-                "| Source Type | Sources | Accuracy | Matched | Missing | Incorrect |\n"
+                "_Note: Accuracy includes LLM semantic evaluation corrections. "
+                "Fields marked as VALUE_MISMATCH by string matching but found semantically equivalent by LLM are counted as matched._\n\n"
             )
             f.write(
-                "|-------------|---------|----------|---------|---------|----------|\n"
+                "| Source Type | Sources | Accuracy | Matched | Missing | Still Incorrect |\n"
+            )
+            f.write(
+                "|-------------|---------|----------|---------|---------|----------------|\n"
             )
 
             for stype in sorted(accuracy_by_type.keys()):
@@ -1047,9 +1068,12 @@ class ExtractionRunner:
                 acc_pct = (
                     stats["matched"] / stats["total"] * 100 if stats["total"] > 0 else 0
                 )
+                llm_note = ""
+                if stats.get("llm_corrected", 0) > 0:
+                    llm_note = f" (+{stats['llm_corrected']} LLM)"
                 f.write(
                     f"| {stype} | {stats['sources']} | {acc_pct:.0f}% | "
-                    f"{stats['matched']}/{stats['total']} | {stats['missing']} | {stats['incorrect']} |\n"
+                    f"{stats['matched']}/{stats['total']}{llm_note} | {stats['missing']} | {stats['incorrect']} |\n"
                 )
             f.write("\n")
 

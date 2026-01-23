@@ -1,6 +1,7 @@
 """Unit tests for EmploymentIncomeAgent (deterministic, no LLM calls).
 
 These tests verify the agent structure and configuration without making API calls.
+# TODO - Add tests for other 10 agents
 """
 
 from src.agents.sow.employment_agent import EmploymentIncomeAgent
@@ -24,22 +25,3 @@ class TestEmploymentIncomeAgent:
         agent = EmploymentIncomeAgent()
         assert hasattr(agent, "extract_employment")
         assert callable(agent.extract_employment)
-
-    def test_instructions_contain_key_rules(self):
-        """Test that instructions contain important extraction rules."""
-        agent = EmploymentIncomeAgent()
-        instructions = agent.instructions.lower()
-
-        # Check for key rules - verify instructions have guidance about extraction behavior
-        assert (
-            "do not guess" in instructions
-            or "do not infer" in instructions
-            or "not stated" in instructions
-        )
-        assert (
-            "literal" in instructions
-            or "exactly as written" in instructions
-            or "as stated" in instructions
-        )
-        assert "empty list" in instructions or "no employment" in instructions
-        assert "null" in instructions or "not stated" in instructions

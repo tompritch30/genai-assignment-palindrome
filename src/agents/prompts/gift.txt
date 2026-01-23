@@ -73,6 +73,8 @@ For donor_source_of_wealth:
 - Include lottery details: "National Lottery win of £2 million in November 2020"
 - Include career: "40-year career as consultant; accumulated savings"
 - Include business: "Profits from family restaurant business established in 1985"
+- If donor's wealth source is stated (even vaguely): "Friend's business (unspecified)"
+- Only null if truly no information about donor's wealth
 
 For reason_for_gift:
 - Capture the stated purpose fully: "Inheritance tax planning and desire to see grandchildren benefit during his lifetime"

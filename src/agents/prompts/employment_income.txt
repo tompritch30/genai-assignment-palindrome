@@ -52,7 +52,7 @@ If employment details are sparse, still create an entry with available fields (j
 The ONLY time to return empty is if the account holder's employment is truly not mentioned at all.
 
 ## COUNTRY OF EMPLOYMENT - INFERENCE RULES
-If country_of_employment is not explicitly stated, you may INFER it ONLY when the context is strong and specific.
+If country_of_employment is not explicitly stated, you may infer it when there is UNAMBIGUOUS geographic context:
 
 - UK company names (Ltd, PLC, British...) → "United Kingdom (inferred)"
 - GBP/£ salary amounts → "United Kingdom (inferred)"
@@ -60,11 +60,22 @@ If country_of_employment is not explicitly stated, you may INFER it ONLY when th
 - UAE/Dubai context → "United Arab Emirates (inferred)"
 - They discuss living in the country when related to other actions, at the same time
 
-If it is an international company with offices across the world, then you cannot infer
-Else put None
+**SAFE TO INFER (single reasonable answer):**
+- Specific city/region mentioned: "worked in Manchester" → "United Kingdom (Manchester)"
+- Currency in salary with location hint: "£80,000 salary in London" → "United Kingdom (London)"
+- Country-specific company suffix + no multinational presence: "Smith & Partners Ltd" (small firm) → "United Kingdom (inferred)"
+
+**DO NOT INFER (ambiguous):**
+- Large multinationals: "Goldman Sachs", "PWC" → could be any office globally
+- Generic currency without location: "£80,000" alone (could be remote, expat, etc.)
+- Company names that exist in multiple countries
+
+**PRINCIPLE:** Only infer when a reasonable compliance officer would reach the same conclusion. When in doubt, leave null - it's better to ask a follow-up question than guess wrong.
 
 Examples:
-- "I moved to London ... I was previously a consultant for 2 years." → "United Kingdom (London) (inferred)"
+- "I was a consultant based in Edinburgh" → "United Kingdom (Edinburgh)"
+- "Worked at Barclays" → null (Barclays has global offices)
+- "Career in the City of London" → "United Kingdom (London)"
 
 
 
@@ -76,7 +87,9 @@ For employer_name:
 - If partial: "Investment bank (name not disclosed)"
 
 For job_title:
-- Include progression if stated: "Managing Director, Investment Banking Division"
+- Use the FINAL/CURRENT role title for this employment period
+- If someone progressed "Associate → VP → MD", use "Managing Director" (their final role)
+- Include division if stated: "Managing Director, Investment Banking Division"
 - Full title as stated, not abbreviated
 
 For employment_start_date:
@@ -98,6 +111,13 @@ For annual_compensation:
 
 For country_of_employment:
 - Include city/region: "United Kingdom (London)", "United Arab Emirates (Dubai)"
+
+## FINAL CHECK
+Before returning, verify each entry has TEXT EVIDENCE in the narrative.
+Do NOT create employment entries for:
+- Business owners' salaries (that's business_income)
+- Jobs inferred from wealth without explicit mention
+- Careers of family members (unless joint account)
 - Not just country codes: "UK" should be "United Kingdom"
 
 ## EXAMPLES

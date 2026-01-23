@@ -59,4 +59,11 @@ For how_business_acquired:
 - Include funding: "Founded with personal savings and bank loan"
 - Include partners: "Co-founded with former colleague"
 
+## FINAL CHECK
+Before returning, verify each entry has TEXT EVIDENCE in the narrative.
+Do NOT create business_income entries for:
+- Employment at a company they don't own
+- Business dividends (different source type)
+- Businesses only mentioned in passing without income details
+
 Return a list of BusinessIncomeFields objects, one for each business income source found.

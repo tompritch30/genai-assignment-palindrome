@@ -34,7 +34,7 @@ class EmploymentIncomeAgent(BaseExtractionAgent):
             List of employment income sources (may be empty)
         """
         logger.info("Extracting employment income sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[EmploymentIncomeFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

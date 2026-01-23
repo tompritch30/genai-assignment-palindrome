@@ -124,7 +124,7 @@ class Orchestrator:
                 holders=holders,
             )
 
-            metadata = ExtractionMetadata(
+            metadata = ExtractionMetadata(  # type: ignore[call-arg]
                 account_holder=account_holder,
                 total_stated_net_worth=metadata_fields.total_stated_net_worth,
                 currency=metadata_fields.currency,
@@ -141,8 +141,8 @@ class Orchestrator:
         except Exception as e:
             logger.error(f"Error extracting metadata: {e}", exc_info=True)
             # Return default metadata on error
-            return ExtractionMetadata(
-                account_holder=AccountHolder(
+            return ExtractionMetadata(  # type: ignore[call-arg]
+                account_holder=AccountHolder(  # type: ignore[call-arg]
                     name="Unknown",
                     type=AccountType.INDIVIDUAL,
                 ),
@@ -230,9 +230,9 @@ class Orchestrator:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Map results to source types
-        agent_results = {}
+        agent_results: dict[str, list[Any]] = {}
         for (_, source_type), result in zip(agents_info, results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.error(f"Agent for {source_type} failed: {result}")
                 agent_results[source_type] = []
             else:
@@ -323,7 +323,7 @@ class Orchestrator:
                 )
 
                 # Create SourceOfWealth object
-                source = SourceOfWealth(
+                source = SourceOfWealth(  # type: ignore[call-arg]
                     source_type=source_type,
                     source_id=source_id,
                     description=description,
@@ -608,8 +608,8 @@ class Orchestrator:
         except Exception as e:
             logger.error(f"Fatal error during extraction process: {e}", exc_info=True)
             # Return minimal result on catastrophic failure
-            default_metadata = ExtractionMetadata(
-                account_holder=AccountHolder(
+            default_metadata = ExtractionMetadata(  # type: ignore[call-arg]
+                account_holder=AccountHolder(  # type: ignore[call-arg]
                     name="Unknown (extraction failed)",
                     type=AccountType.INDIVIDUAL,
                 ),

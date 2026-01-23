@@ -34,7 +34,7 @@ class DivorceSettlementAgent(BaseExtractionAgent):
             List of divorce settlement sources (may be empty)
         """
         logger.info("Extracting divorce settlement sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[DivorceSettlementFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

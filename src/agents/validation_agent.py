@@ -89,17 +89,17 @@ class ValidationAgent:
 
         return self._agent
 
-    def _build_model_settings(self) -> dict:
+    def _build_model_settings(self) -> dict[str, Any]:
         """Build model settings for o3-mini.
 
         Returns:
             Dict with reasoning_effort setting
         """
-        model_settings = {}
+        model_settings: dict[str, Any] = {}
 
         # o3-mini uses reasoning_effort instead of temperature
         if config.reasoning_effort:
-            model_settings["reasoning_effort"] = config.reasoning_effort
+            model_settings["reasoning_effort"] = config.reasoning_effort  # type: ignore[assignment]
 
         if config.max_tokens:
             model_settings["max_completion_tokens"] = config.max_tokens
@@ -266,7 +266,7 @@ If the information isn't in the narrative, confirm it's not stated.
         )
 
         try:
-            result = await agent.run(
+            result = await agent.run(  # type: ignore[call-overload]
                 prompt,
                 output_type=ValidationResult,
                 model_settings=model_settings,
@@ -358,7 +358,7 @@ If the information isn't in the narrative, confirm it's not stated.
         corrections: dict[tuple[str, str], Any] = {}
 
         for key, result in zip(task_keys, results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.error(f"Validation failed for {key}: {result}")
                 continue
 
@@ -380,7 +380,7 @@ If the information isn't in the narrative, confirm it's not stated.
                 if result.reasoning:
                     logger.info(f"  Correction reasoning: {result.reasoning}")
             else:
-                logger.info(f"CONFIRMED {source_id}.{field_name}: '{result.value}'")
+                logger.info(f"CONFIRMED {source_id}.{field_name}: '{result.value}')")
 
         logger.info(f"Validation complete: {len(corrections)} corrections made")
 

@@ -41,7 +41,7 @@ class MetadataAgent(BaseExtractionAgent):
             MetadataFields with account holder info
         """
         logger.info("Extracting metadata...")
-        result = await self.extract(narrative)
+        result: list[MetadataFields] | MetadataFields = await self.extract(narrative)
 
         # Should return a single MetadataFields object or list with one item
         if isinstance(result, list):

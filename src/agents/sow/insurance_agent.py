@@ -34,7 +34,7 @@ class InsurancePayoutAgent(BaseExtractionAgent):
             List of insurance payout sources (may be empty)
         """
         logger.info("Extracting insurance payout sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[InsurancePayoutFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

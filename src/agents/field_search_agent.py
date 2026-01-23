@@ -12,6 +12,7 @@ Key features:
 
 import asyncio
 from dataclasses import dataclass, field as dataclass_field
+from typing import Any
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
@@ -215,7 +216,7 @@ class FieldSearchAgent:
 
             self._agent = Agent(
                 model=config.model,
-                deps_type=SearchContext,
+                deps_type=SearchContext,  # type: ignore[arg-type]
                 instructions=full_instructions,
                 retries=config.retries,
                 tools=[
@@ -230,17 +231,17 @@ class FieldSearchAgent:
 
         return self._agent
 
-    def _build_model_settings(self) -> dict:
+    def _build_model_settings(self) -> dict[str, Any]:
         """Build model settings for o3-mini.
 
         Returns:
             Dict with reasoning_effort and other settings
         """
-        model_settings = {}
+        model_settings: dict[str, Any] = {}
 
         # o3-mini uses reasoning_effort instead of temperature
         if config.reasoning_effort:
-            model_settings["reasoning_effort"] = config.reasoning_effort
+            model_settings["reasoning_effort"] = config.reasoning_effort  # type: ignore[assignment]
 
         if config.max_tokens:
             model_settings["max_completion_tokens"] = config.max_tokens
@@ -316,7 +317,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
 """
 
         try:
-            result = await agent.run(
+            result = await agent.run(  # type: ignore[call-overload]
                 prompt,
                 deps=ctx,
                 output_type=SearchResult,
@@ -422,7 +423,7 @@ You have {ctx.max_calls} tool calls available. Start searching!
         field_results: dict[str, tuple[SearchResult, SearchEvidence]] = {}
 
         for field_name, result in zip(missing_field_names, results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.error(f"Search failed for {field_name}: {result}")
                 continue
 

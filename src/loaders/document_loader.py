@@ -56,7 +56,7 @@ class DocumentLoader:
 
         try:
             # Load document
-            doc = Document(file_path)
+            doc = Document(str(file_path))  # python-docx expects str path
             logger.info(f"Successfully loaded document: {file_path}")
 
             # Extract text from all paragraphs

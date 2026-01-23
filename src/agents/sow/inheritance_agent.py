@@ -34,7 +34,7 @@ class InheritanceAgent(BaseExtractionAgent):
             List of inheritance sources (may be empty)
         """
         logger.info("Extracting inheritance sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[InheritanceFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

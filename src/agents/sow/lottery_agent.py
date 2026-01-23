@@ -34,7 +34,7 @@ class LotteryWinningsAgent(BaseExtractionAgent):
             List of lottery winnings sources (may be empty)
         """
         logger.info("Extracting lottery winnings sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[LotteryWinningsFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

@@ -34,7 +34,7 @@ class SaleOfAssetAgent(BaseExtractionAgent):
             List of asset sale sources (may be empty)
         """
         logger.info("Extracting asset sale sources...")
-        result = await self.extract(narrative, context=context)
+        result: list[SaleOfAssetFields] = await self.extract(narrative, context=context)
 
         # Filter out entries where all fields are None
         filtered = [

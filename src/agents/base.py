@@ -102,10 +102,10 @@ Account Type: {account_type}
             if self.config.max_tokens:
                 model_settings["max_completion_tokens"] = self.config.max_tokens
             if self.config.reasoning_effort:
-                model_settings["reasoning_effort"] = self.config.reasoning_effort
+                model_settings["reasoning_effort"] = self.config.reasoning_effort  # type: ignore[assignment]
         else:
             # GPT models support temperature, max_tokens, seed
-            model_settings["temperature"] = self.config.temperature
+            model_settings["temperature"] = self.config.temperature  # type: ignore[assignment]
             if self.config.max_tokens:
                 model_settings["max_tokens"] = self.config.max_tokens
             if self.config.seed is not None:
@@ -144,7 +144,7 @@ Account Type: {account_type}
 
         try:
             # Use output_type in run() call (matches llm_connection.py pattern)
-            result = await agent.run(
+            result = await agent.run(  # type: ignore[call-overload]
                 prompt,
                 output_type=self.result_type,
                 model_settings=model_settings,

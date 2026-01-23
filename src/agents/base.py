@@ -95,7 +95,7 @@ Account Type: {account_type}
             Dict of model settings for pydantic-ai
         """
         model_settings = {}
-
+        # TODO - Will need more dynamic ways to handle different model capabilities
         if "o1" in self.config.model or "o3" in self.config.model:
             # o-series models don't support temperature/seed
             # Use max_completion_tokens and reasoning_effort

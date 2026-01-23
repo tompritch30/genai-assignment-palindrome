@@ -11,6 +11,7 @@ from typing import Any
 
 from src.models.schemas import SourceOfWealth, ValidationIssue
 from src.utils.logging_config import get_logger
+from datetime import datetime
 
 logger = get_logger(__name__)
 
@@ -201,18 +202,22 @@ def check_date_validity(
     if year_match:
         year = int(year_match.group(1))
 
-        # Flag future dates (allowing some buffer for pending events)
-        if year > 2027:
+        current_year = datetime.now().year
+        if year > current_year:
             return ValidationIssue(
                 source_id=source_id,
                 field_name=field_name,
                 issue_type="implausible_date",
-                message=f"Date '{value}' is too far in the future",
+                message=f"Date '{value}' is too far in the future (beyond {current_year})",
                 current_value=value,
             )
 
-        # Flag very old dates that might be errors
-        if year < 1920 and "historical" not in field_name.lower():
+        # Flag very old dates that might be errors, assuming max years ago of 150 years
+        MAX_YEARS_AGO = 150
+        if (
+            year < current_year - MAX_YEARS_AGO
+            and "historical" not in field_name.lower()
+        ):
             return ValidationIssue(
                 source_id=source_id,
                 field_name=field_name,

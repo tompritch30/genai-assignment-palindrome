@@ -57,30 +57,3 @@ class SaleOfBusinessAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} business sale source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path("holdout_data/case_15_business_earnout/input_narrative.docx")
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = SaleOfBusinessAgent()
-        results = await agent.extract_business_sales(narrative)
-
-        print(f"Found {len(results)} business sale source(s):")
-        for i, sale in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Business: {sale.business_name}")
-            print(f"  Nature: {sale.nature_of_business}")
-            print(f"  Sale Date: {sale.sale_date}")
-            print(f"  Sale Proceeds: {sale.sale_proceeds}")
-            print(f"  Buyer: {sale.buyer_identity}")
-
-    asyncio.run(main())

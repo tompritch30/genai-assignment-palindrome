@@ -54,29 +54,3 @@ class LotteryWinningsAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} lottery winnings source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path("holdout_data/case_13_lottery_gift/input_narrative.docx")
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = LotteryWinningsAgent()
-        results = await agent.extract_lottery_winnings(narrative)
-
-        print(f"Found {len(results)} lottery winnings source(s):")
-        for i, lottery in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Lottery: {lottery.lottery_name}")
-            print(f"  Win Date: {lottery.win_date}")
-            print(f"  Gross Amount: {lottery.gross_amount_won}")
-            print(f"  Country: {lottery.country_of_win}")
-
-    asyncio.run(main())

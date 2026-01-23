@@ -55,31 +55,3 @@ class BusinessDividendsAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} business dividends source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path(
-            "training_data/case_05_business_income_dividends/input_narrative.docx"
-        )
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = BusinessDividendsAgent()
-        results = await agent.extract_business_dividends(narrative)
-
-        print(f"Found {len(results)} business dividends source(s):")
-        for i, div in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Company: {div.company_name}")
-            print(f"  Shareholding: {div.shareholding_percentage}")
-            print(f"  Dividend Amount: {div.dividend_amount}")
-            print(f"  Period: {div.period_received}")
-
-    asyncio.run(main())

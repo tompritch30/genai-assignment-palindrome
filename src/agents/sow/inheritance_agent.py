@@ -54,33 +54,3 @@ class InheritanceAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} inheritance source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path(
-            "training_data/case_04_inheritance_partial/input_narrative.docx"
-        )
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = InheritanceAgent()
-        results = await agent.extract_inheritances(narrative)
-
-        print(f"Found {len(results)} inheritance source(s):")
-        for i, inherit in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Deceased: {inherit.deceased_name}")
-            print(f"  Relationship: {inherit.relationship_to_deceased}")
-            print(f"  Date of Death: {inherit.date_of_death}")
-            print(f"  Amount Inherited: {inherit.amount_inherited}")
-            print(f"  Nature of Assets: {inherit.nature_of_inherited_assets}")
-            print(f"  Original Source: {inherit.original_source_of_deceased_wealth}")
-
-    asyncio.run(main())

@@ -55,30 +55,3 @@ class DivorceSettlementAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} divorce settlement source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path("holdout_data/case_12_divorce_chain/input_narrative.docx")
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = DivorceSettlementAgent()
-        results = await agent.extract_divorce_settlements(narrative)
-
-        print(f"Found {len(results)} divorce settlement source(s):")
-        for i, divorce in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Former Spouse: {divorce.former_spouse_name}")
-            print(f"  Settlement Date: {divorce.settlement_date}")
-            print(f"  Settlement Amount: {divorce.settlement_amount}")
-            print(f"  Court Jurisdiction: {divorce.court_jurisdiction}")
-            print(f"  Duration of Marriage: {divorce.duration_of_marriage}")
-
-    asyncio.run(main())

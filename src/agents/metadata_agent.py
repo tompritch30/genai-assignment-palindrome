@@ -14,6 +14,7 @@ class MetadataFields(BaseModel):
     """Metadata fields extracted from narrative."""
 
     account_holder_name: str
+    # TODO - StrEnum for account type
     account_type: str  # "individual" or "joint"
     total_stated_net_worth: float | None = None
     currency: str = "GBP"

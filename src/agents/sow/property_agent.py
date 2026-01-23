@@ -57,29 +57,3 @@ class PropertySaleAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} property sale source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path("training_data/case_02_property_sale/input_narrative.docx")
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = PropertySaleAgent()
-        results = await agent.extract_property_sales(narrative)
-
-        print(f"Found {len(results)} property sale source(s):")
-        for i, prop in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Address: {prop.property_address}")
-            print(f"  Type: {prop.property_type}")
-            print(f"  Sale Date: {prop.sale_date}")
-            print(f"  Sale Proceeds: {prop.sale_proceeds}")
-
-    asyncio.run(main())

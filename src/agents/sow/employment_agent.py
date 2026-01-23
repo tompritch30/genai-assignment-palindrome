@@ -56,32 +56,3 @@ class EmploymentIncomeAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} employment income source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path("training_data/case_01_employment_simple/input_narrative.docx")
-        narrative = DocumentLoader.load_from_file(doc_path)
-        print(f"Narrative: {narrative}")
-        agent = EmploymentIncomeAgent()
-        results = await agent.extract_employment(narrative)
-
-        print(f"Found {len(results)} employment source(s):")
-        for i, emp in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Employer: {emp.employer_name}")
-            print(f"  Job Title: {emp.job_title}")
-            print(f"  Start Date: {emp.employment_start_date}")
-            print(f"  End Date: {emp.employment_end_date}")
-            print(f"  Compensation: {emp.annual_compensation}")
-            print(f"  Country: {emp.country_of_employment}")
-
-    asyncio.run(main())

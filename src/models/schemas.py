@@ -1,11 +1,11 @@
 """Pydantic models for SOW extraction output schema."""
 
-from enum import Enum, StrEnum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class AccountType(str, Enum):
+class AccountType(StrEnum):
     """Account holder type."""
 
     INDIVIDUAL = "individual"
@@ -50,7 +50,7 @@ class MissingField(BaseModel):
     )
 
 
-class FieldStatus(str, Enum):
+class FieldStatus(StrEnum):
     """Status of a field extraction."""
 
     POPULATED = "populated"
@@ -115,13 +115,17 @@ class SearchEvidence(BaseModel):
     )
 
 
-class PaymentStatus(str, Enum):
+class PaymentStatus(StrEnum):
     """Status of a payment for unrealized/contingent payments."""
 
-    REALISED = "REALISED"  # Payment received
-    UNREALISED = "UNREALISED"  # Payment expected but not yet received
-    PENDING = "PENDING"  # Payment subject to conditions
-    HISTORICAL = "HISTORICAL"  # Historical context, not current source
+    # Payment received
+    REALISED = "REALISED"
+    # Payment expected but not yet received
+    UNREALISED = "UNREALISED"
+    # Payment subject to conditions
+    PENDING = "PENDING"
+    # Historical context, not current source
+    HISTORICAL = "HISTORICAL"
 
 
 # ============================================================================

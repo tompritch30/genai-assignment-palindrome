@@ -289,7 +289,7 @@ class Orchestrator:
                 attributed_to = None
                 if account_holder.type == AccountType.JOINT:
                     attributed_to = self._determine_attribution(
-                        source_type, extracted_fields, account_holder
+                        extracted_fields, account_holder
                     )
 
                 # Track business entities for deduplication
@@ -342,11 +342,15 @@ class Orchestrator:
 
     def _determine_attribution(
         self,
-        source_type: str,
         extracted_fields: dict[str, Any],
         account_holder: AccountHolder,
     ) -> str | None:
         """Determine attribution for joint accounts.
+
+        Uses simple name matching - checks if any holder's name appears in
+        fields that typically indicate ownership (employer for employment,
+        beneficiary for inheritance, etc.).
+        # TODO - Make better use llm or better rules.
 
         Args:
             source_type: Type of source
@@ -354,11 +358,29 @@ class Orchestrator:
             account_holder: Account holder information
 
         Returns:
-            Attribution string (e.g., "Michael Thompson", "Joint") or None
+            Attribution string (holder name, "Joint", or None if unclear)
         """
-        # For now, return None - this would require more sophisticated
-        # analysis of the narrative to determine attribution
-        # This is a placeholder for future enhancement
+        if not account_holder.holders:
+            return None
+
+        # Collect all field values as lowercase for matching
+        field_text = " ".join(str(v).lower() for v in extracted_fields.values() if v)
+
+        # Check each holder's name against extracted fields
+        matched_holders = []
+        for holder in account_holder.holders:
+            holder_name = holder.get("name", "").lower()
+            if not holder_name:
+                continue
+            # Check if holder's name (or surname) appears in field values
+            name_parts = holder_name.split()
+            if any(part in field_text for part in name_parts if len(part) > 2):
+                matched_holders.append(holder.get("name"))
+
+        if len(matched_holders) == 1:
+            return matched_holders[0]
+        elif len(matched_holders) > 1:
+            return "Joint"
         return None
 
     def _get_required_fields(self, source_type: SourceType) -> set[str]:
@@ -614,7 +636,7 @@ class Orchestrator:
                     type=AccountType.INDIVIDUAL,
                 ),
                 total_stated_net_worth=None,
-                currency="GBP",
+                currency="ERROR",
             )
 
             return ExtractionResult(
@@ -632,7 +654,7 @@ class Orchestrator:
             )
 
     def _generate_follow_up_questions(self, sources: list[SourceOfWealth]) -> list[str]:
-        """Generate follow-up questions based on missing fields.
+        """Generate follow-up questions based on missing fields - Fallback method.
 
         Args:
             sources: List of extracted sources
@@ -644,14 +666,14 @@ class Orchestrator:
 
         for source in sources:
             if source.missing_fields:
-                # Generate simple questions for now (will be enhanced later)
-                for missing in source.missing_fields[:2]:  # Limit to 2 per source
+                # Generate simple questions as fallback
+                for missing in source.missing_fields:
                     field_name_readable = missing.field_name.replace("_", " ").title()
                     questions.append(
                         f"For {source.description}: What is the {field_name_readable}?"
                     )
 
-        return questions[:10]  # Limit to top 10 questions
+        return questions
 
 
 if __name__ == "__main__":

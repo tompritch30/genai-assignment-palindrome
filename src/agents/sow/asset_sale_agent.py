@@ -54,18 +54,3 @@ class SaleOfAssetAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} asset sale source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        # Note: No specific test case for asset sale, but agent is ready
-        print("SaleOfAssetAgent ready. No test case available yet.")
-        print("Agent will extract non-property asset sales from narratives.")
-
-    asyncio.run(main())

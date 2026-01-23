@@ -12,7 +12,7 @@ _run_file_handlers: list[logging.FileHandler] = []
 
 def setup_logging() -> None:
     """Configure logging for the application."""
-    # Get log level from environment variable or default to INFO
+    # Optional set log level in .env file
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     log_level = getattr(logging, log_level_name, logging.INFO)
 
@@ -39,7 +39,7 @@ def add_run_file_handler(run_dir: Path) -> logging.FileHandler:
     """Add a file handler for a specific extraction run.
 
     This creates a log file in the run directory that captures all log output
-    during the extraction, making it easy to review what happened.
+    during the extraction, making it easy to review what happened - easier debugging.
 
     Args:
         run_dir: Path to the run directory (e.g., extraction_runs/run_20260122_123456)

@@ -54,32 +54,3 @@ class GiftAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} gift source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path(
-            "training_data/case_06_multigenerational_gift/input_narrative.docx"
-        )
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = GiftAgent()
-        results = await agent.extract_gifts(narrative)
-
-        print(f"Found {len(results)} gift source(s):")
-        for i, gift in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Donor: {gift.donor_name}")
-            print(f"  Relationship: {gift.relationship_to_donor}")
-            print(f"  Gift Date: {gift.gift_date}")
-            print(f"  Gift Value: {gift.gift_value}")
-            print(f"  Donor Source: {gift.donor_source_of_wealth}")
-
-    asyncio.run(main())

@@ -16,10 +16,6 @@ from pydantic_ai import RunContext
 
 from src.models.schemas import ToolCall
 
-# Note: We use RunContext[Any] here because the actual SearchContext type
-# is defined in field_search_agent.py and importing it would create a circular
-# import. pydantic-ai handles the type correctly at runtime via deps_type.
-
 
 async def search_entities(ctx: RunContext[Any], entity_type: str) -> str:
     """Extract entities of a specific type (PERSON, ORG, MONEY, DATE, LOCATION).

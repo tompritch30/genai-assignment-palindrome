@@ -17,6 +17,7 @@ class FollowUpQuestion(BaseModel):
     question: str
     source_id: str | None = None
     field_name: str | None = None
+    # TODO - StrEnum for priority levels
     priority: str = "MEDIUM"  # HIGH, MEDIUM, LOW
 
 
@@ -62,7 +63,7 @@ class FollowUpQuestionAgent:
         # Build context for question generation
         context = self._build_question_context(extraction_result)
 
-        # Use LLM to generate questions with config-based settings
+        # Use LLM to generate questions with config-based settings - TODO make more dynamic
         model_settings = {}
         if "o1" in self.config.model or "o3" in self.config.model:
             # o-series models don't support temperature/seed

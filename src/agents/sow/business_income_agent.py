@@ -56,31 +56,3 @@ class BusinessIncomeAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} business income source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path(
-            "training_data/case_05_business_income_dividends/input_narrative.docx"
-        )
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = BusinessIncomeAgent()
-        results = await agent.extract_business_income(narrative)
-
-        print(f"Found {len(results)} business income source(s):")
-        for i, biz in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Business: {biz.business_name}")
-            print(f"  Nature: {biz.nature_of_business}")
-            print(f"  Ownership: {biz.ownership_percentage}")
-            print(f"  Annual Income: {biz.annual_income_from_business}")
-
-    asyncio.run(main())

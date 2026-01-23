@@ -55,32 +55,3 @@ class InsurancePayoutAgent(BaseExtractionAgent):
 
         logger.info(f"Extracted {len(filtered)} insurance payout source(s)")
         return filtered
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pathlib import Path
-
-    from src.loaders.document_loader import DocumentLoader
-    from src.utils.logging_config import setup_logging
-
-    setup_logging()
-
-    async def main():
-        doc_path = Path(
-            "holdout_data/case_14_insurance_inheritance/input_narrative.docx"
-        )
-        narrative = DocumentLoader.load_from_file(doc_path)
-        agent = InsurancePayoutAgent()
-        results = await agent.extract_insurance_payouts(narrative)
-
-        print(f"Found {len(results)} insurance payout source(s):")
-        for i, insurance in enumerate(results, 1):
-            print(f"\n{i}.")
-            print(f"  Provider: {insurance.insurance_provider}")
-            print(f"  Policy Type: {insurance.policy_type}")
-            print(f"  Claim Event: {insurance.claim_event_description}")
-            print(f"  Payout Date: {insurance.payout_date}")
-            print(f"  Payout Amount: {insurance.payout_amount}")
-
-    asyncio.run(main())

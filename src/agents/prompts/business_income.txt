@@ -9,6 +9,7 @@ Business income represents **ongoing earnings from a business the account holder
 - Drawings from a partnership or sole proprietorship
 - Operating distributions from a business they founded
 - Management fees from their own consulting practice
+- Private practice income (doctors, lawyers, accountants earning fees from own practice)
 
 **The compliance significance:** Business income often represents a significant and recurring wealth source. Compliance officers need to verify the business is legitimate, understand its nature, and confirm the ownership relationship.
 

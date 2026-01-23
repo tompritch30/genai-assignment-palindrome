@@ -61,6 +61,34 @@ class ValidationResult(BaseModel):
     )
 
 
+class FieldCorrection(BaseModel):
+    """Correction for a single field within a source instance."""
+
+    field_name: str = Field(description="Name of the field being corrected")
+    value: str | None = Field(None, description="Corrected value or None if not found")
+    status: FieldStatus = Field(
+        FieldStatus.NOT_STATED, description="Status of the field"
+    )
+    source_quotes: list[str] = Field(
+        default_factory=list, description="Supporting quotes from narrative"
+    )
+    reasoning: str | None = Field(
+        None, description="Brief explanation of the validation decision"
+    )
+
+
+class SourceValidationResult(BaseModel):
+    """Result of validating all flagged fields for a single source instance."""
+
+    source_id: str = Field(description="ID of the source being validated")
+    instance_understanding: str = Field(
+        description="Brief description of which specific instance this is (e.g., 'Deutsche Bank role 2008-2015')"
+    )
+    field_corrections: list[FieldCorrection] = Field(
+        default_factory=list, description="List of corrections for each flagged field"
+    )
+
+
 class ValidationAgent:
     """Agent for validating and correcting flagged fields.
 
@@ -168,22 +196,20 @@ class ValidationAgent:
         logger.debug(f"No specific criteria found for {source_type}.{field_name}")
         return None
 
-    def _build_validation_prompt(
+    def _build_source_validation_prompt(
         self,
         narrative: str,
         context: dict | None,
         source: SourceOfWealth,
-        field_name: str,
-        issue: ValidationIssue,
+        issues: list[ValidationIssue],
     ) -> str:
-        """Build the prompt for validating a specific field.
+        """Build the prompt for validating all flagged fields for a source instance.
 
         Args:
             narrative: Original narrative text
             context: Account holder context
             source: The source of wealth being validated
-            field_name: Name of the field to validate
-            issue: The validation issue that was flagged
+            issues: List of validation issues for this source
 
         Returns:
             Formatted prompt string
@@ -196,40 +222,63 @@ Account Type: {context.get("account_type", "individual")}
 
 """
 
-        # Get field-specific criteria from the original extraction prompt
-        field_criteria = self._get_field_criteria(source.source_type, field_name)
-        field_criteria_str = ""
-        if field_criteria:
-            field_criteria_str = f"""## FIELD FORMAT CRITERIA (from original extraction rules)
-The original extraction agent was given these specific instructions for '{field_name}':
-{field_criteria}
+        # Separate fields into anchor (unflagged) and flagged
+        flagged_field_names = {issue.field_name for issue in issues}
+        
+        anchor_fields_str = ""
+        if source.extracted_fields:
+            anchor_lines = []
+            for fname, fvalue in source.extracted_fields.items():
+                if fname not in flagged_field_names and fvalue is not None:
+                    anchor_lines.append(f"  - {fname}: {fvalue}")
+            if anchor_lines:
+                anchor_fields_str = "\n".join(anchor_lines)
+            else:
+                anchor_fields_str = "  (no other fields extracted)"
 
-IMPORTANT: You MUST follow these same formatting rules. Do NOT simplify or remove context
-that the original extraction rules specify should be included.
+        # Build the flagged fields section with current values and criteria
+        flagged_fields_str = ""
+        for issue in issues:
+            field_criteria = self._get_field_criteria(source.source_type, issue.field_name)
+            criteria_note = ""
+            if field_criteria:
+                criteria_note = f"\n    Format guidance: {field_criteria}"
 
+            flagged_fields_str += f"""
+### {issue.field_name}
+- Current Value: {issue.current_value or "None"}
+- Issue Type: {issue.issue_type}
+- Message: {issue.message or "No details"}{criteria_note}
 """
 
         return f"""{context_str}## NARRATIVE
 {narrative}
 
-## CURRENT EXTRACTION
+## SOURCE INSTANCE TO VALIDATE
 Source Type: {source.source_type}
 Source ID: {source.source_id}
 Description: {source.description}
 
-## FIELD TO VALIDATE
-Field Name: {field_name}
-Current Value: {issue.current_value or "None"}
+## ANCHOR FIELDS (use these to identify WHICH instance this is)
+These fields are already validated and tell you which specific instance in the
+narrative you are working with. For example, if this is an employment source,
+the employer_name and dates tell you which job this is:
+{anchor_fields_str}
 
-## FLAGGED ISSUE
-Issue Type: {issue.issue_type}
-Message: {issue.message or "No details"}
+## FLAGGED FIELDS TO VALIDATE
+For EACH field below, determine the correct value for THIS SPECIFIC SOURCE INSTANCE.
+Use the anchor fields above to know which instance you're validating:
+{flagged_fields_str}
 
-{field_criteria_str}## YOUR TASK
-Re-read the narrative carefully and determine the correct value for '{field_name}'.
-If the current value is correct, confirm it with supporting quotes.
-If it's wrong, provide the correct value with supporting quotes.
-If the information isn't in the narrative, confirm it's not stated.
+## YOUR TASK
+1. IDENTIFY: Use the anchor fields to identify which specific instance in the narrative this is
+2. LOCATE: Find where THIS INSTANCE's information appears in the narrative
+3. VALIDATE: For each flagged field, check the value FOR THIS INSTANCE ONLY
+4. RESPOND: Confirm correct values, correct wrong values, with supporting quotes
+
+CRITICAL: Do NOT confuse this instance with other instances of the same source type.
+If the narrative has multiple employers/properties/etc., use the anchor fields to
+distinguish which one you're validating.
 """
 
     @retry(
@@ -238,54 +287,54 @@ If the information isn't in the narrative, confirm it's not stated.
         retry=retry_if_exception_type(ModelHTTPError),
         reraise=True,
     )
-    async def validate_field(
+    async def validate_source_instance(
         self,
         narrative: str,
         context: dict | None,
         source: SourceOfWealth,
-        field_name: str,
-        issue: ValidationIssue,
-    ) -> ValidationResult:
-        """Validate and potentially correct a single field.
+        issues: list[ValidationIssue],
+    ) -> SourceValidationResult:
+        """Validate all flagged fields for a single source instance.
+
+        This validates all flagged fields together, giving the model full context
+        about which specific instance it's working with.
 
         Args:
             narrative: Original narrative text
             context: Account holder context
             source: The source being validated
-            field_name: Name of the field to validate
-            issue: The flagged validation issue
+            issues: List of validation issues for this source
 
         Returns:
-            ValidationResult with corrected value and reasoning
+            SourceValidationResult with corrections for all flagged fields
         """
         agent = self._create_agent()
         model_settings = self._build_model_settings()
 
-        prompt = self._build_validation_prompt(
-            narrative, context, source, field_name, issue
+        prompt = self._build_source_validation_prompt(
+            narrative, context, source, issues
         )
 
         try:
             result = await agent.run(  # type: ignore[call-overload]
                 prompt,
-                output_type=ValidationResult,
+                output_type=SourceValidationResult,
                 model_settings=model_settings,
             )
 
-            # Log reasoning for transparency
             validation_result = result.output
             logger.info(
-                f"Validation [{source.source_id}.{field_name}]: "
-                f"value='{validation_result.value}' status={validation_result.status.value}"
+                f"Validated {source.source_id} ({validation_result.instance_understanding}): "
+                f"{len(validation_result.field_corrections)} fields checked"
             )
-            if validation_result.reasoning:
-                logger.info(f"  Reasoning: {validation_result.reasoning}")
-            if validation_result.source_quotes:
-                for quote in validation_result.source_quotes[
-                    :2
-                ]:  # Limit to first 2 quotes
-                    truncated = quote[:100] + "..." if len(quote) > 100 else quote
-                    logger.debug(f'  Quote: "{truncated}"')
+
+            for correction in validation_result.field_corrections:
+                logger.info(
+                    f"  [{source.source_id}.{correction.field_name}]: "
+                    f"value='{correction.value}' status={correction.status.value}"
+                )
+                if correction.reasoning:
+                    logger.info(f"    Reasoning: {correction.reasoning}")
 
             return validation_result
 
@@ -294,15 +343,21 @@ If the information isn't in the narrative, confirm it's not stated.
                 logger.warning("Rate limit hit for validation agent, retrying...")
             raise
         except Exception as e:
-            logger.error(f"Error validating field {field_name}: {e}", exc_info=True)
-            # Return original value on error
-            return ValidationResult(
-                value=issue.current_value,
-                status=FieldStatus.POPULATED
-                if issue.current_value
-                else FieldStatus.NOT_STATED,
-                source_quotes=[],
-                reasoning=f"Validation failed: {str(e)}",
+            logger.error(f"Error validating source {source.source_id}: {e}", exc_info=True)
+            # Return original values on error
+            return SourceValidationResult(
+                source_id=source.source_id,
+                instance_understanding="Validation failed",
+                field_corrections=[
+                    FieldCorrection(
+                        field_name=issue.field_name,
+                        value=issue.current_value,
+                        status=FieldStatus.POPULATED if issue.current_value else FieldStatus.NOT_STATED,
+                        source_quotes=[],
+                        reasoning=f"Validation failed: {str(e)}",
+                    )
+                    for issue in issues
+                ],
             )
 
     async def validate_all_issues(
@@ -312,7 +367,11 @@ If the information isn't in the narrative, confirm it's not stated.
         sources: list[SourceOfWealth],
         issues: list[ValidationIssue],
     ) -> dict[tuple[str, str], Any]:
-        """Validate all flagged issues in parallel.
+        """Validate all flagged issues, grouped by source instance.
+
+        Groups issues by source_id and validates all fields for each source
+        together in a single call, giving the model full context about which
+        specific instance it's working with.
 
         Args:
             narrative: Original narrative text
@@ -326,61 +385,75 @@ If the information isn't in the narrative, confirm it's not stated.
         if not issues:
             return {}
 
-        logger.info(f"Validating {len(issues)} flagged issues with LLM...")
+        # Group issues by source_id
+        issues_by_source: dict[str, list[ValidationIssue]] = {}
+        for issue in issues:
+            if issue.source_id not in issues_by_source:
+                issues_by_source[issue.source_id] = []
+            issues_by_source[issue.source_id].append(issue)
+
+        logger.info(
+            f"Validating {len(issues)} flagged issues across {len(issues_by_source)} source instances..."
+        )
 
         # Create a lookup for sources by ID
         source_lookup = {s.source_id: s for s in sources}
 
-        # Create validation tasks
+        # Create validation tasks - one per source instance
         tasks = []
-        task_keys = []
+        task_source_ids = []
 
-        for issue in issues:
-            source = source_lookup.get(issue.source_id)
+        for source_id, source_issues in issues_by_source.items():
+            source = source_lookup.get(source_id)
             if not source:
-                logger.warning(f"Source {issue.source_id} not found for validation")
+                logger.warning(f"Source {source_id} not found for validation")
                 continue
 
-            task = self.validate_field(
+            logger.info(
+                f"  {source_id}: validating {len(source_issues)} fields - "
+                f"{[i.field_name for i in source_issues]}"
+            )
+
+            task = self.validate_source_instance(
                 narrative,
                 context,
                 source,
-                issue.field_name,
-                issue,
+                source_issues,
             )
             tasks.append(task)
-            task_keys.append((issue.source_id, issue.field_name))
+            task_source_ids.append(source_id)
 
-        # Run all validations in parallel
+        # Run all source validations in parallel
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Collect corrections (only include if value changed)
         corrections: dict[tuple[str, str], Any] = {}
 
-        for key, result in zip(task_keys, results):
+        for source_id, result in zip(task_source_ids, results):
             if isinstance(result, BaseException):
-                logger.error(f"Validation failed for {key}: {result}")
+                logger.error(f"Validation failed for {source_id}: {result}")
                 continue
 
-            source_id, field_name = key
             original_source = source_lookup.get(source_id)
-
             if not original_source:
                 continue
 
-            original_value = original_source.extracted_fields.get(field_name)
+            # Process each field correction
+            for correction in result.field_corrections:
+                original_value = original_source.extracted_fields.get(correction.field_name)
+                key = (source_id, correction.field_name)
 
-            # Only include if value actually changed
-            if result.value != original_value:
-                corrections[key] = result.value
-                logger.info(
-                    f"CORRECTED {source_id}.{field_name}: "
-                    f"'{original_value}' -> '{result.value}'"
-                )
-                if result.reasoning:
-                    logger.info(f"  Correction reasoning: {result.reasoning}")
-            else:
-                logger.info(f"CONFIRMED {source_id}.{field_name}: '{result.value}')")
+                # Only include if value actually changed
+                if correction.value != original_value:
+                    corrections[key] = correction.value
+                    logger.info(
+                        f"CORRECTED {source_id}.{correction.field_name}: "
+                        f"'{original_value}' -> '{correction.value}'"
+                    )
+                    if correction.reasoning:
+                        logger.info(f"  Correction reasoning: {correction.reasoning}")
+                else:
+                    logger.info(f"CONFIRMED {source_id}.{correction.field_name}: '{correction.value}'")
 
         logger.info(f"Validation complete: {len(corrections)} corrections made")
 

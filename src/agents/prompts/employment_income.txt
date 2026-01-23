@@ -51,11 +51,16 @@ If context is provided at the start of the narrative, use it to verify:
    - Different employers = separate entries (obvious)
    - Same employer, different roles = separate entries (each role has its own dates, salary)
    - Career progression should NOT be consolidated into one entry
-4. Extract EXACTLY what is stated - do NOT infer or calculate
-5. If vague (e.g., "good salary"), capture the LITERAL text
-6. Return empty list if no employment of account holder mentioned
-7. Set fields to null if not stated
-8. Do NOT create entries where ALL fields are null
+4. PRIVATE PRACTICE IS NOT EMPLOYMENT: Professionals (doctors, lawyers, consultants) earning
+   fees from their own private practice are running a business, not employed:
+   - "Private practice income" → business_income (not this agent)
+   - "Earnings from own consulting practice" → business_income
+   - Salary from an employer (hospital, law firm) → employment_income (this agent)
+5. Extract EXACTLY what is stated - do NOT infer or calculate
+6. If vague (e.g., "good salary"), capture the LITERAL text
+7. Return empty list if no employment of account holder mentioned
+8. Set fields to null if not stated
+9. Do NOT create entries where ALL fields are null
 
 ## EXTRACT EMPLOYMENT EVEN WHEN MENTIONED AS CONTEXT
 
@@ -77,8 +82,8 @@ Employment is often mentioned **indirectly** when explaining how other wealth wa
 If country_of_employment is not explicitly stated, you may infer when there is clear geographic context:
 
 **SAFE TO INFER:**
-- UK company names (Ltd, PLC, British...) → "United Kingdom (inferred)"
-- GBP/£ salary with location hints → "United Kingdom (inferred)"
+- UK-specific company suffixes (PLC, LLP with British context) → "United Kingdom (inferred)"
+- GBP/£ salary with UK location hints → "United Kingdom (inferred)"
 - US company names (Inc, Corp, LLC) → "United States (inferred)"
 - UAE/Dubai context → "United Arab Emirates (inferred)"
 - Specific city mentioned: "worked in Edinburgh" → "United Kingdom (Edinburgh)"
@@ -86,6 +91,7 @@ If country_of_employment is not explicitly stated, you may infer when there is c
 **BE CAUTIOUS WITH:**
 - Large multinationals with global offices (e.g., major banks, Big Four accounting firms, global consultancies) → only infer if narrative gives location context
 - Currency alone without location clues → may be expat, remote work, etc.
+- Acquirer's location in a business sale → does NOT indicate where the account holder worked
 
 **PRINCIPLE:** Infer when a reasonable compliance officer would reach the same conclusion. When ambiguous, use "Not specified" rather than guess.
 

@@ -12,6 +12,7 @@ Usage:
     python run_extraction.py --training-only          # Training data only
     python run_extraction.py --holdout-only           # Holdout data only
     python run_extraction.py --llm-eval               # Use LLM for semantic field comparison
+    python run_extraction.py --only-eval extraction_runs/run_20260122_232623  # Re-evaluate existing outputs
 """
 
 import argparse
@@ -154,25 +155,39 @@ Return your analysis."""
 class ExtractionRunner:
     """Handles extraction runs and result logging."""
 
-    def __init__(self, output_dir: Path, use_llm_eval: bool = False):
+    def __init__(
+        self,
+        output_dir: Path,
+        use_llm_eval: bool = False,
+        existing_run_dir: Path | None = None,
+        eval_only: bool = False,
+    ):
         """Initialize extraction runner.
 
         Args:
             output_dir: Directory to save results
             use_llm_eval: Whether to use LLM-based semantic field comparison
+            existing_run_dir: If provided, use this directory instead of creating a new one
+            eval_only: If True, skip orchestrator initialization (for re-evaluation mode)
         """
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create timestamped run directory
-        self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.run_dir = self.output_dir / f"run_{self.run_timestamp}"
-        self.run_dir.mkdir(exist_ok=True)
+        if existing_run_dir:
+            # Use existing run directory (for --only-eval)
+            self.run_dir = existing_run_dir
+            self.run_timestamp = existing_run_dir.name.replace("run_", "")
+        else:
+            # Create timestamped run directory
+            self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.run_dir = self.output_dir / f"run_{self.run_timestamp}"
+            self.run_dir.mkdir(exist_ok=True)
 
         # Add file logging to the run directory
         self._run_log_handler = add_run_file_handler(self.run_dir)
 
-        self.orchestrator = Orchestrator()
+        # Only initialize orchestrator if we're doing extraction (not eval-only mode)
+        self.orchestrator = None if eval_only else Orchestrator()
         self.results = []
         self.comparison_stats = defaultdict(lambda: defaultdict(int))
 
@@ -459,6 +474,12 @@ class ExtractionRunner:
                     # No more actual sources of this type to match
                     # Record unmatched expected source with full ground truth
                     expected_fields = expected_source.get("extracted_fields", {})
+                    # Build missing_fields with actual expected values (only for non-null fields)
+                    missing_fields_list = [
+                        {"field": k, "expected": v, "actual": None, "issue": "NOT_EXTRACTED"}
+                        for k, v in expected_fields.items()
+                        if v is not None
+                    ]
                     comparison["field_accuracy"].append(
                         {
                             "source_type": stype,
@@ -468,9 +489,9 @@ class ExtractionRunner:
                             "expected_description": expected_source.get("description"),
                             "ground_truth_fields": expected_fields,
                             "accuracy": {
-                                "total_fields": len(expected_fields),
+                                "total_fields": len(missing_fields_list),
                                 "matched_fields": 0,
-                                "missing_fields": list(expected_fields.keys()),
+                                "missing_fields": missing_fields_list,
                                 "incorrect_fields": [],
                                 "accuracy_rate": 0.0,
                                 "unmatched": True,
@@ -524,6 +545,12 @@ class ExtractionRunner:
                 else:
                     # No good match found - record as unmatched with full ground truth
                     expected_fields = expected_source.get("extracted_fields", {})
+                    # Build missing_fields with actual expected values (only for non-null fields)
+                    missing_fields_list = [
+                        {"field": k, "expected": v, "actual": None, "issue": "NOT_EXTRACTED"}
+                        for k, v in expected_fields.items()
+                        if v is not None
+                    ]
                     comparison["field_accuracy"].append(
                         {
                             "source_type": stype,
@@ -533,9 +560,9 @@ class ExtractionRunner:
                             "expected_description": expected_source.get("description"),
                             "ground_truth_fields": expected_fields,
                             "accuracy": {
-                                "total_fields": len(expected_fields),
+                                "total_fields": len(missing_fields_list),
                                 "matched_fields": 0,
-                                "missing_fields": list(expected_fields.keys()),
+                                "missing_fields": missing_fields_list,
                                 "incorrect_fields": [],
                                 "accuracy_rate": 0.0,
                                 "unmatched": True,
@@ -556,8 +583,9 @@ class ExtractionRunner:
 
         # Key fields that identify a source (varies by type)
         # These are fields that uniquely identify a source instance
+        # For employment, include dates to distinguish different roles at same employer
         key_fields = {
-            "employment_income": ["employer_name", "job_title"],
+            "employment_income": ["employer_name", "job_title", "employment_start_date", "employment_end_date"],
             "sale_of_property": ["property_address", "sale_date"],
             "business_income": ["business_name"],
             "business_dividends": ["company_name"],
@@ -1014,12 +1042,30 @@ class ExtractionRunner:
         # Write aggregate stats
         f.write("## Aggregate Accuracy\n\n")
 
-        # Overall field accuracy
+        # Calculate pre-LLM matched count (matched_fields already includes LLM corrections)
+        # So original_matched = matched_fields - llm_semantically_matched
+        original_matched = matched_fields - llm_semantically_matched
+
+        # Overall field accuracy - show LLM-adjusted as primary when LLM eval was used
         if total_fields > 0:
-            overall_acc = matched_fields / total_fields
-            f.write(
-                f"- **Overall Field Accuracy**: {overall_acc:.1%} ({matched_fields}/{total_fields} fields)\n"
-            )
+            if llm_total_evaluated > 0:
+                # LLM evaluation was used - show adjusted accuracy as the main metric
+                overall_acc = matched_fields / total_fields
+                string_match_acc = original_matched / total_fields
+                f.write(
+                    f"- **Field Accuracy**: {overall_acc:.1%} ({matched_fields}/{total_fields} fields)\n"
+                )
+                f.write(
+                    f"  - _String matching alone: {string_match_acc:.1%} ({original_matched}/{total_fields})_\n"
+                )
+                f.write(
+                    f"  - _LLM semantic corrections: +{llm_semantically_matched} fields_\n"
+                )
+            else:
+                overall_acc = matched_fields / total_fields
+                f.write(
+                    f"- **Field Accuracy**: {overall_acc:.1%} ({matched_fields}/{total_fields} fields)\n"
+                )
 
         # Source matching accuracy
         if total_sources_expected > 0:
@@ -1036,44 +1082,31 @@ class ExtractionRunner:
                 f"- **Unmatched Expected Sources**: {unmatched_sources} (no matching actual source found)\n"
             )
 
-        # LLM evaluation summary (if used)
-        if llm_total_evaluated > 0:
-            f.write("\n### LLM Semantic Evaluation\n\n")
-            f.write(f"- **Fields Evaluated by LLM**: {llm_total_evaluated}\n")
-            f.write(
-                f"- **Semantically Equivalent**: {llm_semantically_matched} ({llm_semantically_matched / llm_total_evaluated:.1%})\n"
-            )
-            f.write(
-                f"- **Adjusted Field Accuracy**: {(matched_fields + llm_semantically_matched) / total_fields:.1%} (after LLM corrections)\n"
-            )
-
         f.write("\n")
 
         # Accuracy breakdown by source type
         if accuracy_by_type:
             f.write("### Accuracy by Source Type\n\n")
+            if llm_total_evaluated > 0:
+                f.write(
+                    "_Note: Accuracy percentages reflect final results after LLM semantic evaluation._\n\n"
+                )
             f.write(
-                "_Note: Accuracy includes LLM semantic evaluation corrections. "
-                "Fields marked as VALUE_MISMATCH by string matching but found semantically equivalent by LLM are counted as matched._\n\n"
+                "| Source Type | Sources | Accuracy | Matched | Missing | Incorrect |\n"
             )
             f.write(
-                "| Source Type | Sources | Accuracy | Matched | Missing | Still Incorrect |\n"
-            )
-            f.write(
-                "|-------------|---------|----------|---------|---------|----------------|\n"
+                "|-------------|---------|----------|---------|---------|-----------|\n"
             )
 
             for stype in sorted(accuracy_by_type.keys()):
                 stats = accuracy_by_type[stype]
+                # matched already includes LLM corrections, so this is the final accuracy
                 acc_pct = (
                     stats["matched"] / stats["total"] * 100 if stats["total"] > 0 else 0
                 )
-                llm_note = ""
-                if stats.get("llm_corrected", 0) > 0:
-                    llm_note = f" (+{stats['llm_corrected']} LLM)"
                 f.write(
                     f"| {stype} | {stats['sources']} | {acc_pct:.0f}% | "
-                    f"{stats['matched']}/{stats['total']}{llm_note} | {stats['missing']} | {stats['incorrect']} |\n"
+                    f"{stats['matched']}/{stats['total']} | {stats['missing']} | {stats['incorrect']} |\n"
                 )
             f.write("\n")
 
@@ -1093,7 +1126,26 @@ class ExtractionRunner:
 
     def generate_report(self):
         """Generate comprehensive comparison report."""
-        report_path = self.run_dir / "comparison_report.md"
+        # Find next version number if comparison_report.md already exists
+        base_report = self.run_dir / "comparison_report.md"
+        if base_report.exists():
+            # Find existing versions
+            existing_versions = list(self.run_dir.glob("comparison_report_v*.md"))
+            if existing_versions:
+                # Extract version numbers and find max
+                version_nums = []
+                for p in existing_versions:
+                    try:
+                        v = int(p.stem.split("_v")[1])
+                        version_nums.append(v)
+                    except (IndexError, ValueError):
+                        pass
+                next_version = max(version_nums) + 1 if version_nums else 1
+            else:
+                next_version = 1
+            report_path = self.run_dir / f"comparison_report_v{next_version}.md"
+        else:
+            report_path = base_report
 
         with open(report_path, "w", encoding="utf-8") as f:
             f.write("# Extraction Run Report\n\n")
@@ -1222,15 +1274,9 @@ class ExtractionRunner:
                             if acc["missing_fields"]:
                                 f.write("      - Missing:\n")
                                 for m in acc["missing_fields"]:
-                                    if isinstance(m, dict):
-                                        f.write(
-                                            f"        - `{m['field']}`: Expected `{m.get('expected')}`, Got `{m.get('actual')}`\n"
-                                        )
-                                    else:
-                                        # Unmatched-source case uses list[str] of missing field names.
-                                        f.write(
-                                            f"        - `{m}`: Expected `<present in ground truth>`, Got `None`\n"
-                                        )
+                                    f.write(
+                                        f"        - `{m['field']}`: Expected `{m.get('expected')}`, Got `None`\n"
+                                    )
 
                             if acc["incorrect_fields"]:
                                 f.write("      - Incorrect:\n")
@@ -1282,6 +1328,100 @@ class ExtractionRunner:
         report_path = self.generate_report()
 
         logger.info(f"Run complete! Results saved to: {self.run_dir}")
+        logger.info(f"Comparison report: {report_path}")
+
+        # Clean up run-specific file handler
+        if self._run_log_handler:
+            remove_run_file_handler(self._run_log_handler)
+            self._run_log_handler = None
+
+        return self.results
+
+    async def evaluate_existing(self, cases: list[Path]):
+        """Re-evaluate existing extraction outputs without re-running extraction.
+
+        Uses self.run_dir which should be set to the existing run directory.
+
+        Args:
+            cases: List of case directories with expected_output.json files
+        """
+        logger.info(f"Re-evaluating existing run: {self.run_dir}")
+        logger.info(f"Evaluating {len(cases)} cases...")
+
+        self.results = []
+
+        for case_path in cases:
+            case_name = case_path.name
+            output_path = self.run_dir / f"{case_name}_output.json"
+
+            if not output_path.exists():
+                logger.warning(f"No output found for {case_name} in {self.run_dir}")
+                continue
+
+            logger.info(f"Evaluating {case_name}...")
+
+            try:
+                # Load existing extraction output
+                with open(output_path, "r", encoding="utf-8") as f:
+                    result_dict = json.load(f)
+
+                # Convert back to ExtractionResult
+                from src.models.schemas import ExtractionResult
+                result = ExtractionResult.model_validate(result_dict)
+
+                # Load expected output
+                expected_path = case_path / "expected_output.json"
+                expected = self._load_expected(expected_path) if expected_path.exists() else None
+
+                # Compare and log differences
+                comparison = self._compare_results(result, expected, case_name) if expected else None
+
+                # Run LLM evaluation on mismatched fields if enabled
+                if comparison and self.use_llm_eval:
+                    comparison = await self._run_llm_evaluations(comparison)
+
+                case_result = {
+                    "case_name": case_name,
+                    "case_path": str(case_path),
+                    "output_path": str(output_path),
+                    "extraction_time_seconds": 0,  # Not re-running extraction
+                    "success": True,
+                    "sources_found": result.summary.total_sources_identified,
+                    "completeness_score": result.summary.overall_completeness_score,
+                    "has_expected": expected is not None,
+                    "comparison": comparison,
+                }
+
+                self.results.append(case_result)
+                logger.info(f"{case_name}: {result.summary.total_sources_identified} sources evaluated")
+
+            except Exception as e:
+                logger.error(f"Error evaluating {case_name}: {e}", exc_info=True)
+                self.results.append({
+                    "case_name": case_name,
+                    "case_path": str(case_path),
+                    "success": False,
+                    "error": str(e),
+                })
+
+        # Save run summary (overwrites existing)
+        summary_path = self.run_dir / "run_summary.json"
+        with open(summary_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "run_timestamp": self.run_timestamp,
+                    "re_evaluated": True,
+                    "total_cases": len(cases),
+                    "results": self.results,
+                },
+                f,
+                indent=2,
+            )
+
+        # Generate comparison report
+        report_path = self.generate_report()
+
+        logger.info(f"Evaluation complete! Results saved to: {self.run_dir}")
         logger.info(f"Comparison report: {report_path}")
 
         # Clean up run-specific file handler
@@ -1349,6 +1489,13 @@ async def main():
         action="store_true",
         help="Use LLM-based semantic comparison for field evaluation (slower but more accurate)",
     )
+    parser.add_argument(
+        "--only-eval",
+        type=str,
+        metavar="RUN_DIR",
+        help="Re-evaluate existing extraction outputs without re-running extraction. "
+             "Provide path to existing run directory (e.g., extraction_runs/run_20260122_232623)",
+    )
 
     args = parser.parse_args()
 
@@ -1378,15 +1525,38 @@ async def main():
         logger.error("No cases found to process")
         return
 
-    # Run extraction
-    runner = ExtractionRunner(args.output_dir, use_llm_eval=args.llm_eval)
+    # Determine if we're re-evaluating existing outputs
+    existing_run_dir = None
+    eval_only = False
+    if args.only_eval:
+        existing_run_dir = Path(args.only_eval)
+        eval_only = True
+        if not existing_run_dir.exists():
+            logger.error(f"Existing run directory not found: {existing_run_dir}")
+            return
+
+    # Create runner (uses existing_run_dir if provided, otherwise creates new timestamped dir)
+    runner = ExtractionRunner(
+        args.output_dir,
+        use_llm_eval=args.llm_eval,
+        existing_run_dir=existing_run_dir,
+        eval_only=eval_only,
+    )
     if args.llm_eval:
         logger.info("LLM-based semantic field evaluation ENABLED")
-    results = await runner.run(cases)
+
+    if args.only_eval:
+        # Re-evaluate existing outputs (updates comparison_report.md in place)
+        results = await runner.evaluate_existing(cases)
+        action = "RE-EVALUATION"
+    else:
+        # Run fresh extraction
+        results = await runner.run(cases)
+        action = "EXTRACTION RUN"
 
     # Print summary
     print("\n" + "=" * 80)
-    print("EXTRACTION RUN COMPLETE")
+    print(f"{action} COMPLETE")
     print("=" * 80)
     print(f"Cases processed: {len(results)}")
     print(f"Successful: {sum(1 for r in results if r.get('success'))}")

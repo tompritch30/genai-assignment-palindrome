@@ -1,0 +1,2149 @@
+{
+  "run_timestamp": "20260123_113632",
+  "total_cases": 15,
+  "results": [
+    {
+      "case_name": "case_01_employment_simple",
+      "case_path": "training_data\\case_01_employment_simple",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_01_employment_simple_output.json",
+      "extraction_time_seconds": 9.698646,
+      "success": true,
+      "sources_found": 2,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 2,
+          "actual_count": 2,
+          "sources_matched": 2,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation",
+                  "country_of_employment"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 2,
+          "actual_total": 2
+        }
+      }
+    },
+    {
+      "case_name": "case_02_property_sale",
+      "case_path": "training_data\\case_02_property_sale",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_02_property_sale_output.json",
+      "extraction_time_seconds": 20.515578,
+      "success": true,
+      "sources_found": 2,
+      "completeness_score": 0.6666666666666666,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 2,
+          "actual_count": 2,
+          "sources_matched": 2,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "property_type",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "original_acquisition_method",
+                    "Purchased with savings and mortgage",
+                    "Purchased with savings from career as a barrister combined with a mortgage"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 1,
+                "matched_fields": 1,
+                "matched_field_names": [
+                  "job_title"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [
+                  {
+                    "field": "country_of_employment",
+                    "expected": null,
+                    "actual": "United Kingdom (London)",
+                    "issue": "EXPECTED_NULL"
+                  }
+                ],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 2,
+          "actual_total": 2
+        },
+        "llm_evaluation": {
+          "total_evaluated": 1,
+          "semantically_matched": 1,
+          "corrected_by_type": {
+            "sale_of_property": 1
+          },
+          "details": [
+            {
+              "field": "original_acquisition_method",
+              "source_type": "sale_of_property",
+              "expected": "Purchased with savings and mortgage",
+              "actual": "Purchased with savings from career as a barrister combined with a mortgage",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values indicate the property was purchased using savings and a mortgage, which is the core information. The ACTUAL value specifies that the savings came from a career as a barrister, adding more "
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_03_employment_property",
+      "case_path": "training_data\\case_03_employment_property",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_03_employment_property_output.json",
+      "extraction_time_seconds": 14.817481,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 3,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "property_type",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "original_acquisition_method",
+                    "Purchased using employment savings",
+                    "Purchased with savings from McKinsey earnings"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "country_of_employment",
+                    "expected": "United Kingdom (London office)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 0.8333333333333334
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "country_of_employment",
+                    "expected": "United Kingdom",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 0.8333333333333334
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 3,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 1,
+          "semantically_matched": 1,
+          "corrected_by_type": {
+            "sale_of_property": 1
+          },
+          "details": [
+            {
+              "field": "original_acquisition_method",
+              "source_type": "sale_of_property",
+              "expected": "Purchased using employment savings",
+              "actual": "Purchased with savings from McKinsey earnings",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values indicate the property was purchased using employment savings. The ACTUAL value specifies that the savings came from McKinsey earnings, which is a more detailed explanation of the source of"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_04_inheritance_partial",
+      "case_path": "training_data\\case_04_inheritance_partial",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_04_inheritance_partial_output.json",
+      "extraction_time_seconds": 5.021704,
+      "success": true,
+      "sources_found": 1,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 1,
+          "actual_count": 1,
+          "sources_matched": 1,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "amount_inherited"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "nature_of_inherited_assets",
+                    "Property sale proceeds (\u00a3520,000) plus savings and investments (\u00a3160,000)",
+                    "House sale proceeds from sale of property in Cheltenham (\u00a3520,000) plus savings and investment accounts (\u00a3160,000)"
+                  ],
+                  [
+                    "original_source_of_deceased_wealth",
+                    "Teacher for over 30 years; property originally purchased in 1970s",
+                    "Worked as a teacher for over 30 years; property originally purchased in the 1970s."
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 1,
+          "actual_total": 1
+        },
+        "llm_evaluation": {
+          "total_evaluated": 2,
+          "semantically_matched": 2,
+          "corrected_by_type": {
+            "inheritance": 2
+          },
+          "details": [
+            {
+              "field": "nature_of_inherited_assets",
+              "source_type": "inheritance",
+              "expected": "Property sale proceeds (\u00a3520,000) plus savings and investments (\u00a3160,000)",
+              "actual": "House sale proceeds from sale of property in Cheltenham (\u00a3520,000) plus savings and investment accou",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values describe proceeds from selling a property and savings/investments totaling \u00a3520,000 and \u00a3160,000 respectively. The ACTUAL value specifies the property's location (Cheltenham) and clarifies"
+            },
+            {
+              "field": "original_source_of_deceased_wealth",
+              "source_type": "inheritance",
+              "expected": "Teacher for over 30 years; property originally purchased in 1970s",
+              "actual": "Worked as a teacher for over 30 years; property originally purchased in the 1970s.",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey the same core information that the deceased worked as a teacher for over 30 years and the property was originally purchased in the 1970s. The ACTUAL adds a bit more detail by explic"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_05_business_income_dividends",
+      "case_path": "training_data\\case_05_business_income_dividends",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_05_business_income_dividends_output.json",
+      "extraction_time_seconds": 23.138398,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 0.8333333333333334,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 3,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "business_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "business_name",
+                  "nature_of_business",
+                  "ownership_percentage",
+                  "annual_income_from_business",
+                  "ownership_start_date"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "how_business_acquired",
+                    "Founded by the individual after leaving Arup",
+                    "Founded by Robert Fitzgerald after leaving his position at Arup"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 2,
+                "matched_fields": 2,
+                "matched_field_names": [
+                  "employer_name",
+                  "employment_end_date"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [
+                  {
+                    "field": "job_title",
+                    "expected": null,
+                    "actual": "Managing Director",
+                    "issue": "EXPECTED_NULL"
+                  },
+                  {
+                    "field": "annual_compensation",
+                    "expected": null,
+                    "actual": "\u00a3360,000",
+                    "issue": "EXPECTED_NULL"
+                  },
+                  {
+                    "field": "country_of_employment",
+                    "expected": null,
+                    "actual": "United Kingdom",
+                    "issue": "EXPECTED_NULL"
+                  }
+                ],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "business_dividends",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "company_name",
+                  "shareholding_percentage",
+                  "dividend_amount",
+                  "how_shares_acquired"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [
+                  {
+                    "field": "period_received",
+                    "expected": "Ongoing since founding; last 5 years specifically mentioned",
+                    "actual": "Over the past five years",
+                    "issue": "VALUE_MISMATCH"
+                  }
+                ],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "period_received",
+                    "Ongoing since founding; last 5 years specifically mentioned",
+                    "Over the past five years"
+                  ]
+                ],
+                "accuracy_rate": 0.8
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 3,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 2,
+          "semantically_matched": 1,
+          "corrected_by_type": {
+            "business_income": 1
+          },
+          "details": [
+            {
+              "field": "how_business_acquired",
+              "source_type": "business_income",
+              "expected": "Founded by the individual after leaving Arup",
+              "actual": "Founded by Robert Fitzgerald after leaving his position at Arup",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey that the business was founded by the individual after leaving Arup. The ACTUAL value specifies the individual's name as Robert Fitzgerald and clarifies that he left his position at "
+            },
+            {
+              "field": "period_received",
+              "source_type": "business_dividends",
+              "expected": "Ongoing since founding; last 5 years specifically mentioned",
+              "actual": "Over the past five years",
+              "equivalent": false,
+              "actual_better": false,
+              "reasoning": "The EXPECTED value indicates an ongoing period since founding with specific mention of the last 5 years. The ACTUAL value only mentions 'over the past five years' and does not capture the ongoing natu"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_06_multigenerational_gift",
+      "case_path": "training_data\\case_06_multigenerational_gift",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_06_multigenerational_gift_output.json",
+      "extraction_time_seconds": 4.819402,
+      "success": true,
+      "sources_found": 1,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 1,
+          "actual_count": 1,
+          "sources_matched": 1,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "gift",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "donor_name",
+                  "relationship_to_donor",
+                  "gift_date",
+                  "gift_value",
+                  "donor_source_of_wealth"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "reason_for_gift",
+                    "Inheritance tax planning and desire to see grandchildren benefit during his lifetime",
+                    "Inheritance tax planning and to allow grandchildren to benefit during his lifetime"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 1,
+          "actual_total": 1
+        },
+        "llm_evaluation": {
+          "total_evaluated": 1,
+          "semantically_matched": 1,
+          "corrected_by_type": {
+            "gift": 1
+          },
+          "details": [
+            {
+              "field": "reason_for_gift",
+              "source_type": "gift",
+              "expected": "Inheritance tax planning and desire to see grandchildren benefit during his lifetime",
+              "actual": "Inheritance tax planning and to allow grandchildren to benefit during his lifetime",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both EXPECTED and ACTUAL convey the same core information: inheritance tax planning and the desire for grandchildren to benefit during his lifetime. The slight wording difference ('desire to see grand"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_07_multiple_sources_hnw",
+      "case_path": "training_data\\case_07_multiple_sources_hnw",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_07_multiple_sources_hnw_output.json",
+      "extraction_time_seconds": 24.904455,
+      "success": true,
+      "sources_found": 7,
+      "completeness_score": 0.9149659863945578,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 6,
+          "actual_count": 7,
+          "sources_matched": 6,
+          "sources_missing": [],
+          "sources_extra": [
+            "employment_income"
+          ],
+          "field_accuracy": [
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "original_acquisition_method",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "property_type",
+                    "Residential - Former family home",
+                    "Residential - Primary home (former family home)"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "property_type",
+                  "original_acquisition_method",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 4,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "property_address",
+                  "property_type",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_business",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "business_name",
+                  "nature_of_business",
+                  "ownership_percentage_sold",
+                  "sale_date",
+                  "sale_proceeds",
+                  "buyer_identity"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "how_business_originally_acquired",
+                    "Co-founded in 2019 with two former colleagues after retiring from Goldman Sachs",
+                    "Co-founded in 2019 with two former colleagues following retirement from Goldman Sachs"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_end_date"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "employment_start_date",
+                    "expected": "1985 (joined as Associate)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "annual_compensation",
+                    "~\u00a31,200,000 in final years; \u00a315,000,000+ total career earnings",
+                    "Approximately \u00a31.2 million"
+                  ]
+                ],
+                "accuracy_rate": 0.8
+              }
+            },
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "amount_inherited"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "nature_of_inherited_assets",
+                    "Investment portfolios and proceeds from sale of family estate in Wiltshire",
+                    "Investment portfolios plus proceeds from sale of the family's country estate in Wiltshire"
+                  ],
+                  [
+                    "original_source_of_deceased_wealth",
+                    "Historical family landholdings and career as QC (Queen's Counsel)",
+                    "Family's historical landholdings and his successful career as a QC"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": false,
+          "expected_total": 6,
+          "actual_total": 7
+        },
+        "llm_evaluation": {
+          "total_evaluated": 5,
+          "semantically_matched": 5,
+          "corrected_by_type": {
+            "sale_of_property": 1,
+            "sale_of_business": 1,
+            "employment_income": 1,
+            "inheritance": 2
+          },
+          "details": [
+            {
+              "field": "property_type",
+              "source_type": "sale_of_property",
+              "expected": "Residential - Former family home",
+              "actual": "Residential - Primary home (former family home)",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values refer to residential property and indicate it was a former family home. The ACTUAL value adds the useful detail that it is the primary home, which is not specified in EXPECTED but does not"
+            },
+            {
+              "field": "how_business_originally_acquired",
+              "source_type": "sale_of_business",
+              "expected": "Co-founded in 2019 with two former colleagues after retiring from Goldman Sachs",
+              "actual": "Co-founded in 2019 with two former colleagues following retirement from Goldman Sachs",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the same core information: the business was co-founded in 2019 with two former colleagues after retiring/retirement from Goldman Sachs. The difference between 'after retiring' and '"
+            },
+            {
+              "field": "annual_compensation",
+              "source_type": "employment_income",
+              "expected": "~\u00a31,200,000 in final years; \u00a315,000,000+ total career earnings",
+              "actual": "Approximately \u00a31.2 million",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "The ACTUAL value \"Approximately \u00a31.2 million\" conveys the same core information as the EXPECTED component \"~\u00a31,200,000 in final years\" but without the additional context about total career earnings (\u00a3"
+            },
+            {
+              "field": "nature_of_inherited_assets",
+              "source_type": "inheritance",
+              "expected": "Investment portfolios and proceeds from sale of family estate in Wiltshire",
+              "actual": "Investment portfolios plus proceeds from sale of the family's country estate in Wiltshire",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values describe investment portfolios and proceeds from the sale of a family estate in Wiltshire, conveying the same core information. The ACTUAL adds more detail by specifying \"the family's coun"
+            },
+            {
+              "field": "original_source_of_deceased_wealth",
+              "source_type": "inheritance",
+              "expected": "Historical family landholdings and career as QC (Queen's Counsel)",
+              "actual": "Family's historical landholdings and his successful career as a QC",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values describe the source of deceased wealth as 'historical family landholdings' and a career as QC (Queen's Counsel). The ACTUAL value adds the possessive form \"Family's\" for clarity and mentio"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_08_joint_account",
+      "case_path": "training_data\\case_08_joint_account",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_08_joint_account_output.json",
+      "extraction_time_seconds": 15.746208,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 4,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [
+            "business_income"
+          ],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "business_income",
+              "status": "NOT_EXTRACTED",
+              "explanation": "Expected this source but we did not extract it",
+              "expected_source_id": "SOW_002",
+              "expected_description": "Private practice income",
+              "ground_truth_fields": {
+                "business_name": "London Heart Clinic",
+                "nature_of_business": "Private medical practice (cardiology)",
+                "ownership_percentage": null,
+                "annual_income_from_business": "\u00a380,000",
+                "ownership_start_date": null,
+                "how_business_acquired": null
+              },
+              "accuracy": {
+                "total_fields": 3,
+                "matched_fields": 0,
+                "missing_fields": [
+                  {
+                    "field": "business_name",
+                    "expected": "London Heart Clinic",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  },
+                  {
+                    "field": "nature_of_business",
+                    "expected": "Private medical practice (cardiology)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  },
+                  {
+                    "field": "annual_income_from_business",
+                    "expected": "\u00a380,000",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "accuracy_rate": 0.0,
+                "unmatched": true
+              }
+            },
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "original_acquisition_method",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "property_type",
+                    "Residential - Family home",
+                    "Residential - Primary home (previous home)"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation",
+                  "country_of_employment"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "amount_inherited",
+                  "original_source_of_deceased_wealth"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "nature_of_inherited_assets",
+                    "Cash and investments from sale of property holdings (one-third share of estate)",
+                    "Cash and investments from the sale of his remaining property holdings"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": false,
+          "expected_total": 4,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 2,
+          "semantically_matched": 2,
+          "corrected_by_type": {
+            "sale_of_property": 1,
+            "inheritance": 1
+          },
+          "details": [
+            {
+              "field": "property_type",
+              "source_type": "sale_of_property",
+              "expected": "Residential - Family home",
+              "actual": "Residential - Primary home (previous home)",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values indicate a residential property used as a family or primary home, matching the core information that the property is residential and for home use. The ACTUAL value provides more detail by "
+            },
+            {
+              "field": "nature_of_inherited_assets",
+              "source_type": "inheritance",
+              "expected": "Cash and investments from sale of property holdings (one-third share of estate)",
+              "actual": "Cash and investments from the sale of his remaining property holdings",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values describe cash and investments derived from the sale of property holdings. The EXPECTED explicitly mentions \"one-third share of estate,\" which indicates a specific fractional share of the e"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_09_nested_inheritance_dividends",
+      "case_path": "training_data\\case_09_nested_inheritance_dividends",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_09_nested_inheritance_dividends_output.json",
+      "extraction_time_seconds": 22.048796,
+      "success": true,
+      "sources_found": 2,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 2,
+          "actual_count": 2,
+          "sources_matched": 2,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "nature_of_inherited_assets"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "amount_inherited",
+                    "~\u00a32,100,000 (\u00a31,800,000 in shares + \u00a3300,000 cash/investments)",
+                    "\u00a32,100,000 (\u00a31,800,000 from 60% shareholding in Palmer & Sons Logistics Ltd + \u00a3300,000 from cash and investment accounts)"
+                  ],
+                  [
+                    "original_source_of_deceased_wealth",
+                    "Built Palmer & Sons Logistics Ltd from scratch starting in 1994 with two trucks",
+                    "Built Palmer & Sons Logistics Ltd from scratch in 1994, growing it into a major freight and haulage company with a fleet of over 50 vehicles and contracts with major retailers"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "business_dividends",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "company_name",
+                  "shareholding_percentage",
+                  "dividend_amount",
+                  "period_received",
+                  "how_shares_acquired"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 2,
+          "actual_total": 2
+        },
+        "llm_evaluation": {
+          "total_evaluated": 2,
+          "semantically_matched": 2,
+          "corrected_by_type": {
+            "inheritance": 2
+          },
+          "details": [
+            {
+              "field": "amount_inherited",
+              "source_type": "inheritance",
+              "expected": "~\u00a32,100,000 (\u00a31,800,000 in shares + \u00a3300,000 cash/investments)",
+              "actual": "\u00a32,100,000 (\u00a31,800,000 from 60% shareholding in Palmer & Sons Logistics Ltd + \u00a3300,000 from cash and",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values indicate an inherited amount of approximately \u00a32,100,000, with a breakdown of \u00a31,800,000 in shares and \u00a3300,000 in cash/investments. The ACTUAL provides additional useful detail by specify"
+            },
+            {
+              "field": "original_source_of_deceased_wealth",
+              "source_type": "inheritance",
+              "expected": "Built Palmer & Sons Logistics Ltd from scratch starting in 1994 with two trucks",
+              "actual": "Built Palmer & Sons Logistics Ltd from scratch in 1994, growing it into a major freight and haulage ",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both statements describe the building of Palmer & Sons Logistics Ltd starting in 1994 from scratch. The EXPECTED mentions starting with two trucks, while the ACTUAL adds more detail about growing into"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_10_international_complexity",
+      "case_path": "training_data\\case_10_international_complexity",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_10_international_complexity_output.json",
+      "extraction_time_seconds": 46.09398,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 3,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "property_address",
+                  "original_acquisition_method",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "sale_proceeds",
+                    "expected": "N/A - Current value ~\u00a3850,000",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "property_type",
+                    "Residential flat (former rental, now primary residence)",
+                    "Residential - Primary home (flat)"
+                  ]
+                ],
+                "accuracy_rate": 0.8571428571428571
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "country_of_employment"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "annual_compensation",
+                    "AED 1,800,000 (~\u00a3400,000) - tax-free",
+                    "AED 1,800,000 (approximately \u00a3400,000), tax-free under UAE law"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "amount_inherited",
+                    "~INR 80,000,000 (~\u00a3800,000) - 50% share",
+                    "~\u00a3800,000 (~50% share of estate)"
+                  ],
+                  [
+                    "nature_of_inherited_assets",
+                    "Cash savings, fixed deposits, proceeds from clinic premises sale",
+                    "Cash savings, fixed deposits, and proceeds from the sale of clinic premises"
+                  ],
+                  [
+                    "original_source_of_deceased_wealth",
+                    "Renowned private surgeon practicing for over 40 years in Mumbai",
+                    "Renowned surgeon who practiced privately for over 40 years in Mumbai"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 3,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 5,
+          "semantically_matched": 5,
+          "corrected_by_type": {
+            "sale_of_property": 1,
+            "employment_income": 1,
+            "inheritance": 3
+          },
+          "details": [
+            {
+              "field": "property_type",
+              "source_type": "sale_of_property",
+              "expected": "Residential flat (former rental, now primary residence)",
+              "actual": "Residential - Primary home (flat)",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey that the property is a residential flat used as a primary residence. The EXPECTED value contains more detail, specifying that it was formerly rented and is now a primary residence, "
+            },
+            {
+              "field": "annual_compensation",
+              "source_type": "employment_income",
+              "expected": "AED 1,800,000 (~\u00a3400,000) - tax-free",
+              "actual": "AED 1,800,000 (approximately \u00a3400,000), tax-free under UAE law",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values refer to the same annual compensation amount of AED 1,800,000 (approximately \u00a3400,000) and the tax-free nature of this compensation. The ACTUAL value adds the detail that the tax-free stat"
+            },
+            {
+              "field": "amount_inherited",
+              "source_type": "inheritance",
+              "expected": "~INR 80,000,000 (~\u00a3800,000) - 50% share",
+              "actual": "~\u00a3800,000 (~50% share of estate)",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the core information that the amount inherited is approximately \u00a3800,000 and represents a 50% share. The EXPECTED value additionally provides the amount in INR (~INR 80,000,000), wh"
+            },
+            {
+              "field": "nature_of_inherited_assets",
+              "source_type": "inheritance",
+              "expected": "Cash savings, fixed deposits, proceeds from clinic premises sale",
+              "actual": "Cash savings, fixed deposits, and proceeds from the sale of clinic premises",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values list the same core items: cash savings, fixed deposits, and proceeds from the sale of clinic premises. The ACTUAL phrase 'proceeds from the sale of clinic premises' is a more detailed and "
+            },
+            {
+              "field": "original_source_of_deceased_wealth",
+              "source_type": "inheritance",
+              "expected": "Renowned private surgeon practicing for over 40 years in Mumbai",
+              "actual": "Renowned surgeon who practiced privately for over 40 years in Mumbai",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the same core information: a renowned surgeon practicing privately for over 40 years in Mumbai. The EXPECTED mentions 'private surgeon' and ACTUAL says 'surgeon who practiced privat"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_11_vague_narrative",
+      "case_path": "holdout_data\\case_11_vague_narrative",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_11_vague_narrative_output.json",
+      "extraction_time_seconds": 23.660259,
+      "success": true,
+      "sources_found": 4,
+      "completeness_score": 0.75,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 4,
+          "actual_count": 4,
+          "sources_matched": 4,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "gift",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "relationship_to_donor",
+                  "gift_date"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "donor_source_of_wealth",
+                    "expected": "Friend's business (unspecified)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "donor_name",
+                    "A friend (unnamed)",
+                    "Friend (name not provided)"
+                  ],
+                  [
+                    "gift_value",
+                    "~\u00a350,000",
+                    "\u00a350,000 or so"
+                  ],
+                  [
+                    "reason_for_gift",
+                    "Repayment with 'extra' for helping with friend's business",
+                    "Thank you payment after helping with his business"
+                  ]
+                ],
+                "accuracy_rate": 0.8333333333333334
+              }
+            },
+            {
+              "source_type": "sale_of_asset",
+              "accuracy": {
+                "total_fields": 4,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "asset_description",
+                    "Shares/investments (unspecified)",
+                    "Shares (built up over time)"
+                  ],
+                  [
+                    "original_acquisition_method",
+                    "Built up over time",
+                    "Accumulated over time through personal investment"
+                  ]
+                ],
+                "accuracy_rate": 1.0,
+                "low_confidence_match": true
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "employer_name",
+                  "employment_end_date",
+                  "annual_compensation",
+                  "country_of_employment"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "employment_start_date",
+                    "expected": "~20 years ago (approximate career start)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 0.8
+              }
+            },
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 4,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "amount_inherited"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [
+                  {
+                    "field": "nature_of_inherited_assets",
+                    "expected": null,
+                    "actual": "Cash",
+                    "issue": "EXPECTED_NULL"
+                  }
+                ],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 4,
+          "actual_total": 4
+        },
+        "llm_evaluation": {
+          "total_evaluated": 5,
+          "semantically_matched": 5,
+          "corrected_by_type": {
+            "gift": 3,
+            "sale_of_asset": 2
+          },
+          "details": [
+            {
+              "field": "donor_name",
+              "source_type": "gift",
+              "expected": "A friend (unnamed)",
+              "actual": "Friend (name not provided)",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values indicate the donor is a friend whose name is not provided. The wording differs slightly but the core information is the same and neither contains more or less detail than the other."
+            },
+            {
+              "field": "gift_value",
+              "source_type": "gift",
+              "expected": "~\u00a350,000",
+              "actual": "\u00a350,000 or so",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the same core information: an approximate value around \u00a350,000. The EXPECTED uses '~\u00a350,000' to indicate approximation, and the ACTUAL uses '\u00a350,000 or so', which is a synonymous wa"
+            },
+            {
+              "field": "reason_for_gift",
+              "source_type": "gift",
+              "expected": "Repayment with 'extra' for helping with friend's business",
+              "actual": "Thank you payment after helping with his business",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the core idea of a gift/payment related to helping with a friend's business. EXPECTED specifically mentions it as a 'repayment with extra' indicating more explicit intent about the "
+            },
+            {
+              "field": "asset_description",
+              "source_type": "sale_of_asset",
+              "expected": "Shares/investments (unspecified)",
+              "actual": "Shares (built up over time)",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "The EXPECTED value 'Shares/investments (unspecified)' refers generally to shares or investments without detail. The ACTUAL value 'Shares (built up over time)' specifies that it is shares (a subset of "
+            },
+            {
+              "field": "original_acquisition_method",
+              "source_type": "sale_of_asset",
+              "expected": "Built up over time",
+              "actual": "Accumulated over time through personal investment",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "The EXPECTED value 'Built up over time' and the ACTUAL value 'Accumulated over time through personal investment' convey the same core information that the acquisition method occurred gradually over a "
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_12_divorce_chain",
+      "case_path": "holdout_data\\case_12_divorce_chain",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_12_divorce_chain_output.json",
+      "extraction_time_seconds": 17.847592,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 1.0,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 3,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "divorce_settlement",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "former_spouse_name",
+                  "settlement_date",
+                  "settlement_amount",
+                  "court_jurisdiction",
+                  "duration_of_marriage"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_property",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "property_address",
+                  "original_acquisition_date",
+                  "original_purchase_price",
+                  "sale_date",
+                  "sale_proceeds"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "property_type",
+                    "Townhouse - Primary residence",
+                    "Residential - Primary home (townhouse)"
+                  ],
+                  [
+                    "original_acquisition_method",
+                    "Purchased using divorce settlement funds",
+                    "Purchased with divorce settlement funds"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation",
+                  "country_of_employment"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [
+                  {
+                    "field": "employer_name",
+                    "expected": "Self-employed / Consultant",
+                    "actual": "Unknown employer (name not disclosed)",
+                    "issue": "VALUE_MISMATCH"
+                  }
+                ],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "employer_name",
+                    "Self-employed / Consultant",
+                    "Unknown employer (name not disclosed)"
+                  ]
+                ],
+                "accuracy_rate": 0.8333333333333334
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 3,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 3,
+          "semantically_matched": 2,
+          "corrected_by_type": {
+            "sale_of_property": 2
+          },
+          "details": [
+            {
+              "field": "property_type",
+              "source_type": "sale_of_property",
+              "expected": "Townhouse - Primary residence",
+              "actual": "Residential - Primary home (townhouse)",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values indicate that the property is a townhouse used as a primary residence/home. The EXPECTED states \"Townhouse - Primary residence,\" while the ACTUAL states \"Residential - Primary home (townho"
+            },
+            {
+              "field": "original_acquisition_method",
+              "source_type": "sale_of_property",
+              "expected": "Purchased using divorce settlement funds",
+              "actual": "Purchased with divorce settlement funds",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both values convey the same core information that the acquisition was made using funds from a divorce settlement. The only difference is the choice of preposition ('using' vs 'with'), which does not c"
+            },
+            {
+              "field": "employer_name",
+              "source_type": "employment_income",
+              "expected": "Self-employed / Consultant",
+              "actual": "Unknown employer (name not disclosed)",
+              "equivalent": false,
+              "actual_better": false,
+              "reasoning": "EXPECTED states that the person is Self-employed / Consultant, which indicates a clear employment status and type of work. ACTUAL indicates 'Unknown employer (name not disclosed)', which means there i"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_13_lottery_gift",
+      "case_path": "holdout_data\\case_13_lottery_gift",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_13_lottery_gift_output.json",
+      "extraction_time_seconds": 14.159709,
+      "success": true,
+      "sources_found": 2,
+      "completeness_score": 0.9166666666666667,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 2,
+          "actual_count": 2,
+          "sources_matched": 2,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "gift",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "donor_name",
+                  "relationship_to_donor",
+                  "gift_date",
+                  "gift_value",
+                  "donor_source_of_wealth"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "reason_for_gift",
+                    "Sharing lottery winnings with family members",
+                    "Family gift following his lottery win"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 4,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "job_title",
+                  "employment_end_date",
+                  "annual_compensation",
+                  "country_of_employment"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [
+                  {
+                    "field": "employer_name",
+                    "expected": null,
+                    "actual": "Unknown primary school (Coventry)",
+                    "issue": "EXPECTED_NULL"
+                  }
+                ],
+                "pending_llm_eval": [],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 2,
+          "actual_total": 2
+        },
+        "llm_evaluation": {
+          "total_evaluated": 1,
+          "semantically_matched": 1,
+          "corrected_by_type": {
+            "gift": 1
+          },
+          "details": [
+            {
+              "field": "reason_for_gift",
+              "source_type": "gift",
+              "expected": "Sharing lottery winnings with family members",
+              "actual": "Family gift following his lottery win",
+              "equivalent": true,
+              "actual_better": false,
+              "reasoning": "Both phrases convey the core information that the gift is related to lottery winnings and is shared with family members. The EXPECTED phrase explicitly states \"sharing lottery winnings with family mem"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_14_insurance_inheritance",
+      "case_path": "holdout_data\\case_14_insurance_inheritance",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_14_insurance_inheritance_output.json",
+      "extraction_time_seconds": 45.168879,
+      "success": true,
+      "sources_found": 3,
+      "completeness_score": 0.7777777777777778,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 3,
+          "actual_count": 3,
+          "sources_matched": 3,
+          "sources_missing": [],
+          "sources_extra": [],
+          "field_accuracy": [
+            {
+              "source_type": "insurance_payout",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "insurance_provider",
+                  "policy_type",
+                  "payout_date",
+                  "payout_amount"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "claim_event_description",
+                    "Death of spouse (Elizabeth Foster) following short illness",
+                    "Death of wife (Elizabeth Foster) following a short illness in June 2022"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 3,
+                "matched_fields": 1,
+                "matched_field_names": [
+                  "job_title"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "employment_end_date",
+                    "expected": "Present (or recently retired)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  },
+                  {
+                    "field": "country_of_employment",
+                    "expected": "United Kingdom (implied)",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [
+                  {
+                    "field": "employer_name",
+                    "expected": null,
+                    "actual": "NHS",
+                    "issue": "EXPECTED_NULL"
+                  },
+                  {
+                    "field": "annual_compensation",
+                    "expected": null,
+                    "actual": "\u00a3200,000 (total career savings)",
+                    "issue": "EXPECTED_NULL"
+                  }
+                ],
+                "pending_llm_eval": [],
+                "accuracy_rate": 0.3333333333333333
+              }
+            },
+            {
+              "source_type": "inheritance",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 6,
+                "matched_field_names": [
+                  "deceased_name",
+                  "relationship_to_deceased",
+                  "date_of_death",
+                  "amount_inherited",
+                  "nature_of_inherited_assets"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "original_source_of_deceased_wealth",
+                    "35-year career as Senior Nurse in NHS; consistent saving and pension contributions",
+                    "Senior Nurse at the NHS for 35 years, with a history of consistent saving, investing and maximising NHS pension contributions"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": true,
+          "expected_total": 3,
+          "actual_total": 3
+        },
+        "llm_evaluation": {
+          "total_evaluated": 2,
+          "semantically_matched": 2,
+          "corrected_by_type": {
+            "insurance_payout": 1,
+            "inheritance": 1
+          },
+          "details": [
+            {
+              "field": "claim_event_description",
+              "source_type": "insurance_payout",
+              "expected": "Death of spouse (Elizabeth Foster) following short illness",
+              "actual": "Death of wife (Elizabeth Foster) following a short illness in June 2022",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values describe the same core event: the death of Elizabeth Foster, who is identified as spouse in EXPECTED and wife in ACTUAL, which are synonyms. The ACTUAL adds more detail by specifying 'a sh"
+            },
+            {
+              "field": "original_source_of_deceased_wealth",
+              "source_type": "inheritance",
+              "expected": "35-year career as Senior Nurse in NHS; consistent saving and pension contributions",
+              "actual": "Senior Nurse at the NHS for 35 years, with a history of consistent saving, investing and maximising ",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey the same core information: a 35-year career as a Senior Nurse in the NHS with consistent saving and pension contributions. The ACTUAL adds more detail by mentioning 'investing' and "
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_name": "case_15_business_earnout",
+      "case_path": "holdout_data\\case_15_business_earnout",
+      "output_path": "extraction_runs\\run_20260123_113632\\case_15_business_earnout_output.json",
+      "extraction_time_seconds": 39.940994,
+      "success": true,
+      "sources_found": 6,
+      "completeness_score": 0.9444444444444445,
+      "has_expected": true,
+      "comparison": {
+        "metadata": {
+          "fields_compared": 4,
+          "fields_matched": 4,
+          "fields_missing": 0,
+          "differences": []
+        },
+        "sources": {
+          "expected_count": 5,
+          "actual_count": 6,
+          "sources_matched": 5,
+          "sources_missing": [],
+          "sources_extra": [
+            "sale_of_business"
+          ],
+          "field_accuracy": [
+            {
+              "source_type": "gift",
+              "accuracy": {
+                "total_fields": 5,
+                "matched_fields": 4,
+                "matched_field_names": [
+                  "donor_name",
+                  "relationship_to_donor",
+                  "gift_value"
+                ],
+                "missing_fields": [
+                  {
+                    "field": "gift_date",
+                    "expected": "2011",
+                    "actual": null,
+                    "issue": "NOT_EXTRACTED"
+                  }
+                ],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "reason_for_gift",
+                    "Startup capital for DataSync Solutions Ltd",
+                    "Startup capital for founding DataSync Solutions Ltd"
+                  ]
+                ],
+                "accuracy_rate": 0.8
+              }
+            },
+            {
+              "source_type": "sale_of_business",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "business_name",
+                  "nature_of_business",
+                  "ownership_percentage_sold",
+                  "sale_date",
+                  "sale_proceeds",
+                  "buyer_identity"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "how_business_originally_acquired",
+                    "Co-founded in 2011 with personal savings (\u00a350,000) and \u00a3100,000 loan from parents",
+                    "Co-founded in 2011 with personal savings of \u00a350,000 and a \u00a3100,000 loan from parents"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_business",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "business_name",
+                  "nature_of_business",
+                  "ownership_percentage_sold",
+                  "sale_date",
+                  "sale_proceeds",
+                  "buyer_identity"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "how_business_originally_acquired",
+                    "Same as SOW_001 - earnout component",
+                    "Earnout payment from same business sale (see upfront entry)"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "sale_of_business",
+              "accuracy": {
+                "total_fields": 7,
+                "matched_fields": 7,
+                "matched_field_names": [
+                  "business_name",
+                  "nature_of_business",
+                  "ownership_percentage_sold",
+                  "sale_date",
+                  "sale_proceeds",
+                  "buyer_identity"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "how_business_originally_acquired",
+                    "Same as SOW_001 - earnout component",
+                    "Earnout payment from same business sale (see upfront entry)"
+                  ]
+                ],
+                "accuracy_rate": 1.0
+              }
+            },
+            {
+              "source_type": "employment_income",
+              "accuracy": {
+                "total_fields": 6,
+                "matched_fields": 5,
+                "matched_field_names": [
+                  "employer_name",
+                  "job_title",
+                  "employment_start_date",
+                  "employment_end_date",
+                  "annual_compensation"
+                ],
+                "missing_fields": [],
+                "incorrect_fields": [
+                  {
+                    "field": "country_of_employment",
+                    "expected": "United Kingdom (assumed)",
+                    "actual": "United States",
+                    "issue": "VALUE_MISMATCH"
+                  }
+                ],
+                "extra_fields": [],
+                "pending_llm_eval": [
+                  [
+                    "country_of_employment",
+                    "United Kingdom (assumed)",
+                    "United States"
+                  ]
+                ],
+                "accuracy_rate": 0.8333333333333334
+              }
+            }
+          ]
+        },
+        "summary": {
+          "total_sources_match": false,
+          "expected_total": 5,
+          "actual_total": 6
+        },
+        "llm_evaluation": {
+          "total_evaluated": 5,
+          "semantically_matched": 4,
+          "corrected_by_type": {
+            "gift": 1,
+            "sale_of_business": 3
+          },
+          "details": [
+            {
+              "field": "reason_for_gift",
+              "source_type": "gift",
+              "expected": "Startup capital for DataSync Solutions Ltd",
+              "actual": "Startup capital for founding DataSync Solutions Ltd",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey the core information that the gift is for startup capital related to DataSync Solutions Ltd. The ACTUAL adds the word 'founding,' which is a more specific detail about the purpose o"
+            },
+            {
+              "field": "how_business_originally_acquired",
+              "source_type": "sale_of_business",
+              "expected": "Co-founded in 2011 with personal savings (\u00a350,000) and \u00a3100,000 loan from parents",
+              "actual": "Co-founded in 2011 with personal savings of \u00a350,000 and a \u00a3100,000 loan from parents",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey the same core information that the business was co-founded in 2011 using personal savings of \u00a350,000 and a \u00a3100,000 loan from parents. The ACTUAL phrase includes 'of' in 'personal s"
+            },
+            {
+              "field": "how_business_originally_acquired",
+              "source_type": "sale_of_business",
+              "expected": "Same as SOW_001 - earnout component",
+              "actual": "Earnout payment from same business sale (see upfront entry)",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values describe an 'earnout' component related to the acquisition of the business. EXPECTED states 'Same as SOW_001 - earnout component,' which references that the acquisition involved an earnout"
+            },
+            {
+              "field": "how_business_originally_acquired",
+              "source_type": "sale_of_business",
+              "expected": "Same as SOW_001 - earnout component",
+              "actual": "Earnout payment from same business sale (see upfront entry)",
+              "equivalent": true,
+              "actual_better": true,
+              "reasoning": "Both values convey that the business was acquired through an earnout mechanism related to a sale of the same business. The ACTUAL provides additional useful detail specifying it as an \"Earnout payment"
+            },
+            {
+              "field": "country_of_employment",
+              "source_type": "employment_income",
+              "expected": "United Kingdom (assumed)",
+              "actual": "United States",
+              "equivalent": false,
+              "actual_better": false,
+              "reasoning": "The EXPECTED value indicates employment in the United Kingdom, while the ACTUAL value indicates employment in the United States. These are two different countries and therefore the core information di"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

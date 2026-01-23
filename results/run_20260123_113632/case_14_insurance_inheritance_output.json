@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "case_id": null,
+    "account_holder": {
+      "name": "Graham Foster",
+      "type": "individual",
+      "holders": null
+    },
+    "total_stated_net_worth": 780000.0,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Electrician",
+      "extracted_fields": {
+        "employer_name": "NHS",
+        "job_title": "Electrician",
+        "employment_start_date": null,
+        "employment_end_date": null,
+        "annual_compensation": "£200,000 (total career savings)",
+        "country_of_employment": null
+      },
+      "missing_fields": [
+        {
+          "field_name": "employment_start_date",
+          "reason": "Not stated in narrative",
+          "partially_answered": false
+        },
+        {
+          "field_name": "employment_end_date",
+          "reason": "Not stated in narrative",
+          "partially_answered": false
+        },
+        {
+          "field_name": "country_of_employment",
+          "reason": "Not stated in narrative",
+          "partially_answered": false
+        }
+      ],
+      "completeness_score": 0.3333333333333333,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "insurance_payout",
+      "source_id": "SOW_003",
+      "description": "Life insurance payout from Legal & General",
+      "extracted_fields": {
+        "insurance_provider": "Legal & General",
+        "policy_type": "Life insurance",
+        "claim_event_description": "Death of wife (Elizabeth Foster) following a short illness in June 2022",
+        "payout_date": "August 2022",
+        "payout_amount": "£400,000"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_002",
+      "description": "Inheritance from Elizabeth Foster (spouse)",
+      "extracted_fields": {
+        "deceased_name": "Elizabeth Foster (spouse)",
+        "relationship_to_deceased": "Spouse (wife)",
+        "date_of_death": "June 2022",
+        "amount_inherited": "~£180,000 (estate assets: savings and investments)",
+        "nature_of_inherited_assets": "Life insurance policy payout, savings and investments, and full ownership of the family home (transferred via right of survivorship)",
+        "original_source_of_deceased_wealth": "Senior Nurse at the NHS for 35 years, with a history of consistent saving, investing and maximising NHS pension contributions"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": [
+        "SOW_003"
+      ],
+      "donor_wealth_chain": null,
+      "source_chain": null
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 1,
+    "overall_completeness_score": 0.7777777777777778
+  },
+  "recommended_follow_up_questions": [
+    "You mentioned working as an Electrician at the NHS - when did you start this employment?",
+    "When did your employment as an Electrician at the NHS end?",
+    "Could you tell us which country you were employed in as an Electrician at the NHS?"
+  ]
+}

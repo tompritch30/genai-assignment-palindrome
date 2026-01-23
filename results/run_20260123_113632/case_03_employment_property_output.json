@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "case_id": null,
+    "account_holder": {
+      "name": "David Chen",
+      "type": "individual",
+      "holders": null
+    },
+    "total_stated_net_worth": 2200000.0,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Partner at McKinsey & Company",
+      "extracted_fields": {
+        "employer_name": "McKinsey & Company",
+        "job_title": "Partner",
+        "employment_start_date": "January 2014",
+        "employment_end_date": "Present",
+        "annual_compensation": "£450,000 (base salary, bonus, and profit share)",
+        "country_of_employment": null
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_002",
+      "description": "Associate Partner at McKinsey & Company",
+      "extracted_fields": {
+        "employer_name": "McKinsey & Company",
+        "job_title": "Associate Partner",
+        "employment_start_date": "2010",
+        "employment_end_date": "2013",
+        "annual_compensation": "£280,000 (annual)",
+        "country_of_employment": null
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_003",
+      "description": "Sale of property at Flat 12, Waterside Apartments, Manchester M3 4JR",
+      "extracted_fields": {
+        "property_address": "Flat 12, Waterside Apartments, Manchester M3 4JR",
+        "property_type": "Residential - Buy-to-let investment",
+        "original_acquisition_method": "Purchased with savings from McKinsey earnings",
+        "original_acquisition_date": "August 2015",
+        "original_purchase_price": "£225,000",
+        "sale_date": "June 2023",
+        "sale_proceeds": "£365,000 (net proceeds after costs; gross £385,000)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0
+  },
+  "recommended_follow_up_questions": []
+}

@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "case_id": null,
+    "account_holder": {
+      "name": "Victoria Palmer",
+      "type": "individual",
+      "holders": null
+    },
+    "total_stated_net_worth": 2600000.0,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "business_dividends",
+      "source_id": "SOW_001",
+      "description": "Dividends from Business",
+      "extracted_fields": {
+        "company_name": "Palmer & Sons Logistics Ltd",
+        "shareholding_percentage": "60%",
+        "dividend_amount": "£95,000 (2020), £120,000 (2021), £140,000 (2022), £155,000 (2023)",
+        "period_received": "2020 - 2023",
+        "how_shares_acquired": "Inherited from uncle (Charles Palmer) in August 2019"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_002",
+      "description": "Inheritance from Charles Palmer (uncle)",
+      "extracted_fields": {
+        "deceased_name": "Charles Palmer (uncle)",
+        "relationship_to_deceased": "Uncle",
+        "date_of_death": "August 2019",
+        "amount_inherited": "£2,100,000 (£1,800,000 from 60% shareholding in Palmer & Sons Logistics Ltd + £300,000 from cash and investment accounts)",
+        "nature_of_inherited_assets": "60% shareholding in Palmer & Sons Logistics Ltd and cash/investment accounts",
+        "original_source_of_deceased_wealth": "Built Palmer & Sons Logistics Ltd from scratch in 1994, growing it into a major freight and haulage company with a fleet of over 50 vehicles and contracts with major retailers"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 2,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0
+  },
+  "recommended_follow_up_questions": []
+}

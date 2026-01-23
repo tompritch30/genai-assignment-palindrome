@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "case_id": null,
+    "account_holder": {
+      "name": "James Richardson",
+      "type": "individual",
+      "holders": null
+    },
+    "total_stated_net_worth": 1800000.0,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Chief Technology Officer at Meridian Financial Services Ltd",
+      "extracted_fields": {
+        "employer_name": "Meridian Financial Services Ltd",
+        "job_title": "Chief Technology Officer",
+        "employment_start_date": "April 2016",
+        "employment_end_date": "Present",
+        "annual_compensation": "£245,000 (£180,000 base + £50,000-£80,000 annual bonus)",
+        "country_of_employment": "United Kingdom (London)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_002",
+      "description": "Director of Technology (final position); various technology leadership roles prior at Deutsche Bank",
+      "extracted_fields": {
+        "employer_name": "Deutsche Bank",
+        "job_title": "Director of Technology (final position); various technology leadership roles prior",
+        "employment_start_date": "2008",
+        "employment_end_date": "2016",
+        "annual_compensation": "Approximately £140,000 (final position)",
+        "country_of_employment": null
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 2,
+    "fully_complete_sources": 2,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0
+  },
+  "recommended_follow_up_questions": []
+}

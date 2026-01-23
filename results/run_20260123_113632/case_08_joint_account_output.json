@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "case_id": null,
+    "account_holder": {
+      "name": "Michael Thompson and Sarah Thompson",
+      "type": "joint",
+      "holders": [
+        {
+          "name": "Michael Thompson",
+          "role": "Joint Holder"
+        },
+        {
+          "name": "Sarah Thompson",
+          "role": "Joint Holder"
+        }
+      ]
+    },
+    "total_stated_net_worth": 1500000.0,
+    "currency": "GBP"
+  },
+  "sources_of_wealth": [
+    {
+      "source_type": "employment_income",
+      "source_id": "SOW_001",
+      "description": "Consultant Cardiologist at St Thomas' Hospital NHS Trust",
+      "extracted_fields": {
+        "employer_name": "St Thomas' Hospital NHS Trust",
+        "job_title": "Consultant Cardiologist",
+        "employment_start_date": "September 2012",
+        "employment_end_date": "Present",
+        "annual_compensation": "£128,000",
+        "country_of_employment": "United Kingdom"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "sale_of_property",
+      "source_id": "SOW_002",
+      "description": "Sale of property at 28 Maple Drive, Sevenoaks, Kent",
+      "extracted_fields": {
+        "property_address": "28 Maple Drive, Sevenoaks, Kent",
+        "property_type": "Residential - Primary home (previous home)",
+        "original_acquisition_method": "Purchased jointly",
+        "original_acquisition_date": "2014",
+        "original_purchase_price": "£650,000",
+        "sale_date": "November 2023",
+        "sale_proceeds": "£620,000 (net after mortgage repayment and costs; gross £925,000)"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    },
+    {
+      "source_type": "inheritance",
+      "source_id": "SOW_003",
+      "description": "Inheritance from George Mitchell (father)",
+      "extracted_fields": {
+        "deceased_name": "George Mitchell (father)",
+        "relationship_to_deceased": "Father",
+        "date_of_death": "December 2021",
+        "amount_inherited": "£420,000 (one-third share of estate)",
+        "nature_of_inherited_assets": "Cash and investments from the sale of his remaining property holdings",
+        "original_source_of_deceased_wealth": "Successful property developer in the North West of England"
+      },
+      "missing_fields": [],
+      "completeness_score": 1.0,
+      "attributed_to": null,
+      "notes": null,
+      "compliance_flags": null,
+      "payment_status": null,
+      "overlapping_sources": null,
+      "donor_wealth_chain": null,
+      "source_chain": null
+    }
+  ],
+  "summary": {
+    "total_sources_identified": 3,
+    "fully_complete_sources": 3,
+    "sources_with_missing_fields": 0,
+    "overall_completeness_score": 1.0
+  },
+  "recommended_follow_up_questions": []
+}

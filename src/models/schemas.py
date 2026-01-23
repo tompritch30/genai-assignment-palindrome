@@ -58,49 +58,6 @@ class FieldStatus(str, Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
-class ExtractedField(BaseModel):
-    """Generic wrapper for ANY extracted field with evidence.
-
-    This provides per-field justification with source quotes for validation.
-    One class, reused for all fields across all 11 SOW schemas.
-    """
-
-    value: str | None = Field(
-        None, description="The extracted value, or None if not found/applicable"
-    )
-    status: FieldStatus = Field(
-        FieldStatus.NOT_STATED,
-        description="Whether field is populated, not stated, or not applicable",
-    )
-    source_quotes: list[str] = Field(
-        default_factory=list,
-        description="Verbatim quotes from narrative supporting this value",
-    )
-
-    @classmethod
-    def populated(cls, value: str, quotes: list[str] | None = None) -> "ExtractedField":
-        """Create a populated field with value and optional quotes."""
-        return cls(
-            value=value,
-            status=FieldStatus.POPULATED,
-            source_quotes=quotes or [],
-        )
-
-    @classmethod
-    def not_stated(cls) -> "ExtractedField":
-        """Create a field marked as not stated in the narrative."""
-        return cls(value=None, status=FieldStatus.NOT_STATED, source_quotes=[])
-
-    @classmethod
-    def not_applicable(cls, reason: str | None = None) -> "ExtractedField":
-        """Create a field marked as not applicable."""
-        return cls(
-            value=reason,
-            status=FieldStatus.NOT_APPLICABLE,
-            source_quotes=[],
-        )
-
-
 class ValidationIssue(BaseModel):
     """Represents a potential issue found during deterministic validation.
 
@@ -173,210 +130,356 @@ class PaymentStatus(str, Enum):
 
 
 class EmploymentIncomeFields(BaseModel):
-    """Extracted fields for Employment Income source type."""
+    """Extracted fields for Employment Income source type.
+
+    Each distinct role/position should be a SEPARATE entry, even at the same employer.
+    Career progression (e.g., Analyst → VP) represents different income periods.
+    """
 
     employer_name: str | None = Field(
-        None, description="Name of the employing organization"
+        None,
+        description="Full legal name of employer. For unknown: 'Investment bank (name not disclosed)'. This is the organization that paid salary, not a business the person owns.",
     )
-    job_title: str | None = Field(None, description="Official job title or role")
+    job_title: str | None = Field(
+        None,
+        description="Specific job title for THIS role/position. Each title (e.g., 'Associate Partner' vs 'Partner') should be a separate entry since they have different salaries and dates.",
+    )
     employment_start_date: str | None = Field(
-        None, description="When employment began (month/year minimum)"
+        None,
+        description="When THIS specific role began. Format: 'March 2015' or '2010'. For promotions, this is when they started in this particular position.",
     )
     employment_end_date: str | None = Field(
-        None, description="When employment ended, or 'Present' if ongoing"
+        None,
+        description="When THIS role ended. Use 'Present' for current employment. For past roles before promotion, use the date they moved to the next role.",
     )
     annual_compensation: str | None = Field(
-        None, description="Annual salary/package value in GBP"
+        None,
+        description="Salary/compensation for THIS role. Include breakdown if stated: '£200,000 (£150,000 base + £50,000 bonus)'. Use full numbers not '£200k'.",
     )
     country_of_employment: str | None = Field(
-        None, description="Country where employment is/was based"
+        None,
+        description="Country with city if known: 'United Kingdom (London)'. May infer from clear context (UK company, GBP salary) but mark as '(inferred)' if not explicit.",
     )
 
 
 class BusinessIncomeFields(BaseModel):
-    """Extracted fields for Business Income source type."""
+    """Extracted fields for Business Income source type.
 
-    business_name: str | None = Field(None, description="Legal name of the business")
+    Business income is for owners/founders drawing income from their OWN business.
+    This is distinct from employment (working for someone else's company).
+    """
+
+    business_name: str | None = Field(
+        None,
+        description="Full legal name: 'Smith Consulting Ltd', 'Brown & Partners LLP'. This is a business the account holder OWNS, not works for.",
+    )
     nature_of_business: str | None = Field(
-        None, description="Industry sector and primary business activity"
+        None,
+        description="Sector and specific activity: 'Engineering consultancy specialising in structural design', not just 'consultancy'.",
     )
     ownership_percentage: str | None = Field(
-        None, description="Percentage ownership stake"
+        None,
+        description="Ownership stake with context: '100% (sole owner)', '55% (majority shareholder)', '33% (equal partner)'.",
     )
     annual_income_from_business: str | None = Field(
-        None, description="Annual income drawn from the business"
+        None,
+        description="Income drawn as owner: '£85,000 (director's salary)', '£120,000 (drawings)'. This is salary/distributions, not dividends.",
     )
     ownership_start_date: str | None = Field(
-        None, description="When ownership/involvement began"
+        None,
+        description="When ownership began with context: 'September 2008 (founded)', 'March 2015 (acquired stake)'.",
     )
     how_business_acquired: str | None = Field(
-        None, description="How the business ownership was obtained"
+        None,
+        description="Origin of ownership: 'Founded with personal savings', 'Co-founded with former colleague', 'Acquired 50% stake for £200k'. Include funding source.",
     )
 
 
 class BusinessDividendsFields(BaseModel):
-    """Extracted fields for Business Dividends source type."""
+    """Extracted fields for Business Dividends source type.
+
+    Dividends are passive income from shareholdings - distinct from business income
+    (active involvement). Same person can have BOTH from same company.
+    """
 
     company_name: str | None = Field(
-        None, description="Name of the company paying dividends"
+        None,
+        description="Full legal name of company paying dividends: 'Smith & Sons Ltd', 'Brown Industries Plc'.",
     )
     shareholding_percentage: str | None = Field(
-        None, description="Percentage of shares held"
+        None,
+        description="Ownership stake: '60% (majority shareholder)', '25% (minority stake)'. This determines dividend entitlement.",
     )
     dividend_amount: str | None = Field(
-        None, description="Amount of dividends received"
+        None,
+        description="Annual dividend income. If variable by year: '£80,000 (2020), £95,000 (2021), £110,000 (2022)'. Include recent figures.",
     )
     period_received: str | None = Field(
-        None, description="Time period during which dividends were received"
+        None,
+        description="Timeframe: '2020 - Present', 'Ongoing since founding', 'Since inheriting shares in 2018'.",
     )
     how_shares_acquired: str | None = Field(
-        None, description="Method of acquiring the shares"
+        None,
+        description="Origin of shareholding: 'Founded the company in 2010', 'Inherited from uncle (Robert Smith) in August 2019', 'Purchased 40% stake in 2015 for £500,000'.",
     )
 
 
 class SaleOfBusinessFields(BaseModel):
-    """Extracted fields for Sale of Business source type."""
+    """Extracted fields for Sale of Business source type.
 
-    business_name: str | None = Field(None, description="Name of the business sold")
+    A one-time liquidity event converting business ownership to cash.
+    For earnout deals, create SEPARATE entries for upfront and each earnout payment.
+    """
+
+    business_name: str | None = Field(
+        None,
+        description="Full legal name of business sold: 'Smith Consulting Ltd', 'TechStart Solutions Inc'.",
+    )
     nature_of_business: str | None = Field(
-        None, description="Industry sector and primary business activity"
+        None,
+        description="Sector and activity: 'Software development company specialising in fintech solutions'.",
     )
     ownership_percentage_sold: str | None = Field(
-        None, description="Percentage of business that was sold"
+        None,
+        description="Stake sold: '100% (full sale)', '55% (majority stake)'. Include what was retained if partial.",
     )
-    sale_date: str | None = Field(None, description="Date of the sale transaction")
+    sale_date: str | None = Field(
+        None,
+        description="Transaction date. For earnouts: 'July 2022' (upfront), 'July 2023 (earnout)'. Use 'Expected July 2024' for pending.",
+    )
     sale_proceeds: str | None = Field(
-        None, description="Net proceeds received from the sale"
+        None,
+        description="Amount for THIS payment. Upfront: '£2,000,000 (upfront payment)'. Earnout: '£500,000 (first earnout)'. Pending: 'Expected ~£400,000'.",
     )
-    buyer_identity: str | None = Field(None, description="Who purchased the business")
+    buyer_identity: str | None = Field(
+        None,
+        description="Acquirer with context: 'MegaCorp Inc. (US-based technology firm)', 'Private equity consortium'.",
+    )
     how_business_originally_acquired: str | None = Field(
-        None, description="How the seller originally came to own the business"
+        None,
+        description="Origin chain: 'Co-founded in 2011 with personal savings (£50,000) and £100,000 loan from parents'. Critical for compliance provenance.",
     )
 
 
 class SaleOfAssetFields(BaseModel):
-    """Extracted fields for Sale of Asset source type."""
+    """Extracted fields for Sale of Asset source type.
+
+    Non-property, non-business assets converted to cash: investments, vehicles,
+    collectibles, crypto, etc. NOT for business stakes (use sale_of_business)
+    or property (use sale_of_property).
+    """
 
     asset_description: str | None = Field(
-        None, description="Description of the asset sold"
+        None,
+        description="Specific description: 'Classic car collection (3 vehicles)', 'Investment portfolio (publicly traded shares)', 'Art collection (modern paintings)'. Not just 'shares' or 'investments'.",
     )
     original_acquisition_method: str | None = Field(
-        None, description="How the asset was originally acquired"
+        None,
+        description="How acquired: 'Purchased with employment savings', 'Inherited from father', 'Accumulated over 20-year career'.",
     )
     original_acquisition_date: str | None = Field(
-        None, description="When the asset was originally acquired"
+        None,
+        description="When acquired: '2015', 'March 2018', 'Built up over 2000-2020'.",
     )
-    sale_date: str | None = Field(None, description="Date of the sale")
-    sale_proceeds: str | None = Field(None, description="Amount received from the sale")
+    sale_date: str | None = Field(
+        None,
+        description="When sold: 'June 2022', '2021'.",
+    )
+    sale_proceeds: str | None = Field(
+        None,
+        description="Amount received in full: '£250,000' not '£250k'. Include context: '£150,000 (partial sale of portfolio)'.",
+    )
     buyer_identity: str | None = Field(
-        None, description="Who purchased the asset (if known/relevant)"
+        None,
+        description="Who bought (if known): 'Private collector', 'Auction house', or null if not relevant.",
     )
 
 
 class SaleOfPropertyFields(BaseModel):
-    """Extracted fields for Sale of Property source type."""
+    """Extracted fields for Sale of Property source type.
+
+    Property as wealth - either sold for proceeds or retained as equity.
+    For retained properties, use 'N/A - Property retained' for sale fields.
+    """
 
     property_address: str | None = Field(
-        None, description="Address or location of the property"
+        None,
+        description="Location with detail: 'Flat 12, Waterside Apartments, Manchester M3 4JR' or 'South London (exact address not stated)'.",
     )
-    property_type: str | None = Field(None, description="Type of property")
+    property_type: str | None = Field(
+        None,
+        description="Classification AND description: 'Residential - Buy-to-let investment', 'Commercial - Office building', 'Residential - Primary home (four-bedroom Victorian house)'.",
+    )
     original_acquisition_method: str | None = Field(
-        None, description="How the property was originally acquired"
+        None,
+        description="How acquired WITH funding source: 'Purchased with employment savings', 'Purchased using divorce settlement funds', 'Inherited from father', 'Purchased jointly'.",
     )
     original_acquisition_date: str | None = Field(
-        None, description="When the property was acquired"
+        None,
+        description="When acquired: 'August 2015', 'March 1998'.",
     )
     original_purchase_price: str | None = Field(
-        None, description="Original acquisition cost (if purchased)"
+        None,
+        description="Acquisition cost in full: '£225,000'. If inherited, null (not applicable). Use full numbers not '£1.1M'.",
     )
-    sale_date: str | None = Field(None, description="Date of the property sale")
-    sale_proceeds: str | None = Field(None, description="Net proceeds from the sale")
+    sale_date: str | None = Field(
+        None,
+        description="When sold: 'June 2023'. For retained property: 'N/A - Property retained' or 'Not sold - currently held'.",
+    )
+    sale_proceeds: str | None = Field(
+        None,
+        description="Net proceeds: '£365,000 (net after costs; gross £385,000)'. For retained: 'N/A - Current value ~£850,000'.",
+    )
 
 
 class InheritanceFields(BaseModel):
-    """Extracted fields for Inheritance source type."""
+    """Extracted fields for Inheritance source type.
 
-    deceased_name: str | None = Field(None, description="Name of the deceased person")
-    relationship_to_deceased: str | None = Field(
-        None, description="Relationship between beneficiary and deceased"
+    Wealth transferred upon death. Consolidate all assets from SAME deceased
+    into ONE entry. The deceased's career/business is THEIR wealth source, not
+    the account holder's employment/business.
+    """
+
+    deceased_name: str | None = Field(
+        None,
+        description="Name WITH relationship: 'Margaret Wilson (mother)', 'Robert Brown (uncle)'. If name unknown: 'Grandmother (name not provided)'.",
     )
-    date_of_death: str | None = Field(None, description="When the deceased passed away")
-    amount_inherited: str | None = Field(None, description="Total value inherited")
+    relationship_to_deceased: str | None = Field(
+        None,
+        description="Relationship: 'Mother', 'Father', 'Spouse', 'Uncle (maternal)'. Capitalised.",
+    )
+    date_of_death: str | None = Field(
+        None,
+        description="When deceased passed: 'March 2019', '2018'. If approximate: 'sometime in the last five years'.",
+    )
+    amount_inherited: str | None = Field(
+        None,
+        description="Total value with breakdown: '~£500,000 (£300,000 property + £200,000 investments)'. Include share info: '~£400,000 (~50% share of estate)'.",
+    )
     nature_of_inherited_assets: str | None = Field(
-        None, description="What form the inheritance took"
+        None,
+        description="Asset types consolidated: 'Property sale proceeds (£300,000) plus savings and investments (£150,000)', '60% shareholding in Smith & Co Ltd plus cash'.",
     )
     original_source_of_deceased_wealth: str | None = Field(
-        None, description="How the deceased accumulated the wealth being inherited"
+        None,
+        description="How DECEASED built their wealth (not account holder's career): 'Teacher for over 30 years', 'Built Smith Logistics Ltd from scratch in 1985', 'Renowned surgeon in Birmingham for 40 years'.",
     )
 
 
 class GiftFields(BaseModel):
-    """Extracted fields for Gift source type."""
+    """Extracted fields for Gift source type.
+
+    Voluntary transfer while donor is ALIVE. If donor has died and assets
+    passed through estate, that's inheritance - not gift.
+    """
 
     donor_name: str | None = Field(
-        None, description="Name of the person giving the gift"
+        None,
+        description="Name WITH relationship: 'William Thompson (father)', 'Margaret Brown (grandmother)'. If unknown: 'Friend (name not provided)'.",
     )
     relationship_to_donor: str | None = Field(
-        None, description="Relationship between recipient and donor"
+        None,
+        description="Relationship: 'Father', 'Grandfather', 'Friend', 'Family friend'. Capitalised.",
     )
-    gift_date: str | None = Field(None, description="When the gift was given")
-    gift_value: str | None = Field(None, description="Value of the gift")
+    gift_date: str | None = Field(
+        None,
+        description="When received: 'March 2020', 'Early 2020', 'Around Christmas 2019'.",
+    )
+    gift_value: str | None = Field(
+        None,
+        description="Amount in full: '£500,000' not '£500k'. If loan: '£100,000 (loan, repaid in 2015)'. If vague: 'Described as substantial - no figure'.",
+    )
     donor_source_of_wealth: str | None = Field(
-        None, description="How the donor accumulated the funds being gifted"
+        None,
+        description="How DONOR got the money - critical for compliance chain: 'Sale of manufacturing business (Acme Industries) in 2005 for ~£3 million', 'National Lottery win of £2 million in November 2020'.",
     )
     reason_for_gift: str | None = Field(
-        None, description="Purpose or occasion for the gift"
+        None,
+        description="Purpose: 'Inheritance tax planning', 'Deposit for first home', 'Startup capital for business', 'Wedding gift'.",
     )
 
 
 class DivorceSettlementFields(BaseModel):
-    """Extracted fields for Divorce Settlement source type."""
+    """Extracted fields for Divorce Settlement source type.
+
+    Settlement RECEIVED by account holder (incoming funds). If they PAID
+    a settlement, that's not a source of wealth.
+    """
 
     former_spouse_name: str | None = Field(
-        None, description="Name of the former spouse"
+        None,
+        description="Name of ex-spouse if provided, otherwise null.",
     )
     settlement_date: str | None = Field(
-        None, description="When the divorce was finalized/settlement received"
+        None,
+        description="When finalised/received: 'March 2018', '2019'.",
     )
     settlement_amount: str | None = Field(
-        None, description="Value of settlement received"
+        None,
+        description="Value received in full numbers: '£1,200,000' not '£1.2 million'. Include what form it took if stated.",
     )
     court_jurisdiction: str | None = Field(
-        None, description="Where the divorce was legally processed"
+        None,
+        description="Where processed: 'Family Court, London (England and Wales)', 'Family Court in Edinburgh (Scotland)'.",
     )
     duration_of_marriage: str | None = Field(
-        None, description="How long the marriage lasted"
+        None,
+        description="How long married: '15 years', '2005-2020 (15 years)'. Helps explain settlement size.",
     )
 
 
 class LotteryWinningsFields(BaseModel):
-    """Extracted fields for Lottery Winnings source type."""
+    """Extracted fields for Lottery Winnings source type.
+
+    Direct lottery win by account holder. If someone ELSE won and gifted
+    money, that's a gift with lottery as donor's source - not lottery_winnings.
+    """
 
     lottery_name: str | None = Field(
-        None, description="Name of the lottery or prize draw"
+        None,
+        description="Full name: 'UK National Lottery', 'EuroMillions', 'Health Lottery'. Include draw type if known.",
     )
-    win_date: str | None = Field(None, description="Date of the winning")
+    win_date: str | None = Field(
+        None,
+        description="When won: 'November 2021', 'March 2020'. Include month if available.",
+    )
     gross_amount_won: str | None = Field(
-        None, description="Total amount won before any deductions"
+        None,
+        description="Total won in full: '£1,500,000' not '£1.5 million'. UK lottery is tax-free so gross=net typically.",
     )
     country_of_win: str | None = Field(
-        None, description="Country where the lottery was held"
+        None,
+        description="Where lottery was held: 'United Kingdom', 'Ireland'. Full country name, not codes.",
     )
 
 
 class InsurancePayoutFields(BaseModel):
-    """Extracted fields for Insurance Payout source type."""
+    """Extracted fields for Insurance Payout source type.
+
+    Compensation from insurance policy. Separate from inheritance even if
+    triggered by same death - insurance pays directly to beneficiary,
+    inheritance goes through estate.
+    """
 
     insurance_provider: str | None = Field(
-        None, description="Name of the insurance company"
+        None,
+        description="Insurer name: 'Phoenix Life Insurance', 'Guardian Assurance'. If unknown: 'Insurance company (name not stated)'.",
     )
-    policy_type: str | None = Field(None, description="Type of insurance policy")
+    policy_type: str | None = Field(
+        None,
+        description="Policy type: 'Life insurance', 'Critical illness cover', 'Accident insurance', 'Income protection'.",
+    )
     claim_event_description: str | None = Field(
-        None, description="What triggered the insurance claim"
+        None,
+        description="What triggered claim with context: 'Death of spouse (Margaret Brown) following short illness', 'Critical illness diagnosis (cancer) in March 2020'.",
     )
-    payout_date: str | None = Field(None, description="When the payout was received")
+    payout_date: str | None = Field(
+        None,
+        description="When received: 'March 2022', 'Late 2021'.",
+    )
     payout_amount: str | None = Field(
-        None, description="Amount received from insurance"
+        None,
+        description="Insurance amount ONLY (not combined with inheritance): '£400,000'. Use full numbers.",
     )
 
 

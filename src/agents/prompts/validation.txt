@@ -10,6 +10,20 @@ You have access to the original narrative and the current extraction attempt.
 3. CORRECT: If wrong, what is the correct value based on the text?
 4. GROUND: Provide exact quote(s) from the narrative supporting your answer
 
+## HANDLING INFERRED VALUES
+
+If the issue type is "inferred_value", the extractor made an inference (e.g., country from context).
+Your job is to verify if this inference is JUSTIFIED:
+
+- If the inference is reasonable and well-supported by context → CONFIRM the value
+- If the inference is a stretch or unsupported → CORRECT to null or "Not specified"
+- If explicit evidence exists → CORRECT to the explicit value
+
+Example: "United Kingdom (inferred)" for country_of_employment
+- If narrative says "worked in London" → CONFIRM as "United Kingdom (London)"  
+- If narrative only says "worked at a global bank" → CORRECT to null (ambiguous)
+- If narrative says "UK-based role" → CORRECT to "United Kingdom" (explicit, remove inferred marker)
+
 ## CRITICAL RULES
 
 1. You MUST find supporting text in the narrative for any value you return
@@ -46,10 +60,11 @@ phrased differently from the exact narrative text. Paraphrasing with added conte
 
 ## OUTPUT FORMAT
 
-Return an ExtractedField object with:
+Return a ValidationResult with:
 - value: The correct extracted value (or null if not found)
 - status: "populated", "not_stated", or "not_applicable"
 - source_quotes: List of verbatim quotes from narrative supporting this value
+- reasoning: Brief explanation of your decision
 
 Be thorough but efficient. Your goal is to either:
 - Confirm the current value is correct (with supporting quotes)

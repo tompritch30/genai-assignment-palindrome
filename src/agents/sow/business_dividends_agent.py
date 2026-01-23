@@ -34,7 +34,9 @@ class BusinessDividendsAgent(BaseExtractionAgent):
             List of business dividends sources (may be empty)
         """
         logger.info("Extracting business dividends sources...")
-        result: list[BusinessDividendsFields] = await self.extract(narrative, context=context)
+        result: list[BusinessDividendsFields] = await self.extract(
+            narrative, context=context
+        )
 
         # Filter out entries where all fields are None
         filtered = [

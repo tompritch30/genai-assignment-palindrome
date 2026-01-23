@@ -476,7 +476,12 @@ class ExtractionRunner:
                     expected_fields = expected_source.get("extracted_fields", {})
                     # Build missing_fields with actual expected values (only for non-null fields)
                     missing_fields_list = [
-                        {"field": k, "expected": v, "actual": None, "issue": "NOT_EXTRACTED"}
+                        {
+                            "field": k,
+                            "expected": v,
+                            "actual": None,
+                            "issue": "NOT_EXTRACTED",
+                        }
                         for k, v in expected_fields.items()
                         if v is not None
                     ]
@@ -547,7 +552,12 @@ class ExtractionRunner:
                     expected_fields = expected_source.get("extracted_fields", {})
                     # Build missing_fields with actual expected values (only for non-null fields)
                     missing_fields_list = [
-                        {"field": k, "expected": v, "actual": None, "issue": "NOT_EXTRACTED"}
+                        {
+                            "field": k,
+                            "expected": v,
+                            "actual": None,
+                            "issue": "NOT_EXTRACTED",
+                        }
                         for k, v in expected_fields.items()
                         if v is not None
                     ]
@@ -585,7 +595,12 @@ class ExtractionRunner:
         # These are fields that uniquely identify a source instance
         # For employment, include dates to distinguish different roles at same employer
         key_fields = {
-            "employment_income": ["employer_name", "job_title", "employment_start_date", "employment_end_date"],
+            "employment_income": [
+                "employer_name",
+                "job_title",
+                "employment_start_date",
+                "employment_end_date",
+            ],
             "sale_of_property": ["property_address", "sale_date"],
             "business_income": ["business_name"],
             "business_dividends": ["company_name"],
@@ -1367,14 +1382,23 @@ class ExtractionRunner:
 
                 # Convert back to ExtractionResult
                 from src.models.schemas import ExtractionResult
+
                 result = ExtractionResult.model_validate(result_dict)
 
                 # Load expected output
                 expected_path = case_path / "expected_output.json"
-                expected = self._load_expected(expected_path) if expected_path.exists() else None
+                expected = (
+                    self._load_expected(expected_path)
+                    if expected_path.exists()
+                    else None
+                )
 
                 # Compare and log differences
-                comparison = self._compare_results(result, expected, case_name) if expected else None
+                comparison = (
+                    self._compare_results(result, expected, case_name)
+                    if expected
+                    else None
+                )
 
                 # Run LLM evaluation on mismatched fields if enabled
                 if comparison and self.use_llm_eval:
@@ -1393,16 +1417,20 @@ class ExtractionRunner:
                 }
 
                 self.results.append(case_result)
-                logger.info(f"{case_name}: {result.summary.total_sources_identified} sources evaluated")
+                logger.info(
+                    f"{case_name}: {result.summary.total_sources_identified} sources evaluated"
+                )
 
             except Exception as e:
                 logger.error(f"Error evaluating {case_name}: {e}", exc_info=True)
-                self.results.append({
-                    "case_name": case_name,
-                    "case_path": str(case_path),
-                    "success": False,
-                    "error": str(e),
-                })
+                self.results.append(
+                    {
+                        "case_name": case_name,
+                        "case_path": str(case_path),
+                        "success": False,
+                        "error": str(e),
+                    }
+                )
 
         # Save run summary (overwrites existing)
         summary_path = self.run_dir / "run_summary.json"
@@ -1494,7 +1522,7 @@ async def main():
         type=str,
         metavar="RUN_DIR",
         help="Re-evaluate existing extraction outputs without re-running extraction. "
-             "Provide path to existing run directory (e.g., extraction_runs/run_20260122_232623)",
+        "Provide path to existing run directory (e.g., extraction_runs/run_20260122_232623)",
     )
 
     args = parser.parse_args()

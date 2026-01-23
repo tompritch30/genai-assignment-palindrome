@@ -34,7 +34,9 @@ class SaleOfBusinessAgent(BaseExtractionAgent):
             List of business sale sources (may be empty)
         """
         logger.info("Extracting business sale sources...")
-        result: list[SaleOfBusinessFields] = await self.extract(narrative, context=context)
+        result: list[SaleOfBusinessFields] = await self.extract(
+            narrative, context=context
+        )
 
         # Filter out entries where all fields are None
         filtered = [

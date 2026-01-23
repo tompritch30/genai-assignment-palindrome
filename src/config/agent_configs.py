@@ -55,9 +55,6 @@ validation_agent = AgentConfig(
     reasoning_effort="high",
 )
 
-# =============================================================================
-# Simple SOW Extraction Agents (gpt-4.1-mini - good instruction following)
-# =============================================================================
 
 # Boosted to 4.1 due to poor performance on employment details
 employment_agent = AgentConfig(
@@ -72,6 +69,7 @@ property_agent = AgentConfig(
     retries=3,
 )
 
+# Boosted to 4.1 due to poor performance on income details
 business_income_agent = AgentConfig(
     model="openai:gpt-4.1",
     temperature=0.0,

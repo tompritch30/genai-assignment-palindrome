@@ -34,7 +34,9 @@ class BusinessIncomeAgent(BaseExtractionAgent):
             List of business income sources (may be empty)
         """
         logger.info("Extracting business income sources...")
-        result: list[BusinessIncomeFields] = await self.extract(narrative, context=context)
+        result: list[BusinessIncomeFields] = await self.extract(
+            narrative, context=context
+        )
 
         # Filter out entries where all fields are None
         filtered = [

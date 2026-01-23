@@ -224,6 +224,102 @@ def check_date_validity(
     return None
 
 
+def check_inferred_value(
+    value: str | None,
+    narrative: str,
+    field_name: str,
+    source_id: str,
+) -> ValidationIssue | None:
+    """Check if a value was marked as inferred and needs LLM verification.
+
+    Values containing "(inferred)", "(implied)", or similar markers
+    should be reviewed by the LLM to confirm the inference is justified.
+
+    Args:
+        value: Extracted value to check
+        narrative: Original narrative text
+        field_name: Name of the field
+        source_id: ID of the source
+
+    Returns:
+        ValidationIssue if value contains inference markers, None otherwise
+    """
+    if not value:
+        return None
+
+    # Inference markers that should trigger LLM review
+    inference_markers = [
+        "(inferred)",
+        "(implied)",
+        "(assumed)",
+        "(likely)",
+        "(probable)",
+        "not specified",
+        "not stated",
+    ]
+
+    value_lower = value.lower()
+    for marker in inference_markers:
+        if marker in value_lower:
+            return ValidationIssue(
+                source_id=source_id,
+                field_name=field_name,
+                issue_type="inferred_value",
+                message=f"Value contains '{marker}' - needs LLM verification",
+                current_value=value,
+            )
+
+    return None
+
+
+# Fields that are error-prone and should ALWAYS get LLM review when populated
+TROUBLESOME_FIELDS = {
+    # These fields require careful judgment and are often extracted incorrectly
+    "country_of_employment",
+    "donor_source_of_wealth",
+    "original_source_of_deceased_wealth",
+    "source_of_deceased_wealth",
+    "how_business_acquired",
+    "how_business_originally_acquired",
+    "original_acquisition_method",
+}
+
+
+def check_troublesome_field(
+    value: str | None,
+    narrative: str,
+    field_name: str,
+    source_id: str,
+) -> ValidationIssue | None:
+    """Flag troublesome fields that should always get LLM review.
+
+    Some fields are consistently error-prone and benefit from a second
+    pass by the LLM validation agent, even if they pass other checks.
+
+    Args:
+        value: Extracted value to check
+        narrative: Original narrative text
+        field_name: Name of the field
+        source_id: ID of the source
+
+    Returns:
+        ValidationIssue if field is in troublesome list, None otherwise
+    """
+    if not value:
+        return None
+
+    if field_name in TROUBLESOME_FIELDS:
+        return ValidationIssue(
+            source_id=source_id,
+            field_name=field_name,
+            issue_type="troublesome_field",
+            message=f"High-risk field '{field_name}' flagged for LLM verification",
+            current_value=value,
+        )
+
+    return None
+
+
 def find_validation_issues(
     sources: list[SourceOfWealth],
     narrative: str,
@@ -251,6 +347,22 @@ def find_validation_issues(
         for field_name, value in fields.items():
             if not isinstance(value, str) or not value:
                 continue
+
+            # Always flag troublesome fields for LLM review
+            troublesome_issue = check_troublesome_field(
+                value, narrative, field_name, source_id
+            )
+            if troublesome_issue:
+                issues.append(troublesome_issue)
+                continue  # One issue per field is enough
+
+            # Flag inferred values for LLM review
+            inferred_issue = check_inferred_value(
+                value, narrative, field_name, source_id
+            )
+            if inferred_issue:
+                issues.append(inferred_issue)
+                continue  # One issue per field is enough
 
             # Check value grounding
             grounding_issue = check_value_grounding(

@@ -382,3 +382,18 @@ ruff format src/ tests/
 ```bash
 mypy src/
 ```
+
+## Screenshots
+
+### Home Screen
+![Home Screen](demo_screenshots/home_screen.png)
+
+### Loading Screen
+![Loading Screen](demo_screenshots/loading_screen.png)
+
+### Processed Results
+![Processed File](demo_screenshots/processed_file.png)
+
+![Processed File - Sources](demo_screenshots/processed_file_1.png)
+
+![Processed File - Follow-up Questions](demo_screenshots/processed_file_2.png)

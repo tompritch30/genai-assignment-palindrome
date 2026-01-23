@@ -202,6 +202,7 @@ class ValidationAgent:
         context: dict | None,
         source: SourceOfWealth,
         issues: list[ValidationIssue],
+        all_sources: list[SourceOfWealth] | None = None,
     ) -> str:
         """Build the prompt for validating all flagged fields for a source instance.
 
@@ -210,6 +211,7 @@ class ValidationAgent:
             context: Account holder context
             source: The source of wealth being validated
             issues: List of validation issues for this source
+            all_sources: All sources being extracted (to avoid duplicating info)
 
         Returns:
             Formatted prompt string
@@ -224,7 +226,7 @@ Account Type: {context.get("account_type", "individual")}
 
         # Separate fields into anchor (unflagged) and flagged
         flagged_field_names = {issue.field_name for issue in issues}
-        
+
         anchor_fields_str = ""
         if source.extracted_fields:
             anchor_lines = []
@@ -239,7 +241,9 @@ Account Type: {context.get("account_type", "individual")}
         # Build the flagged fields section with current values and criteria
         flagged_fields_str = ""
         for issue in issues:
-            field_criteria = self._get_field_criteria(source.source_type, issue.field_name)
+            field_criteria = self._get_field_criteria(
+                source.source_type, issue.field_name
+            )
             criteria_note = ""
             if field_criteria:
                 criteria_note = f"\n    Format guidance: {field_criteria}"
@@ -251,6 +255,29 @@ Account Type: {context.get("account_type", "individual")}
 - Message: {issue.message or "No details"}{criteria_note}
 """
 
+        # Build section showing OTHER sources being extracted (to prevent duplication)
+        other_sources_str = ""
+        if all_sources:
+            other_sources = [s for s in all_sources if s.source_id != source.source_id]
+            if other_sources:
+                other_lines = []
+                for other in other_sources:
+                    other_lines.append(
+                        f"  - {other.source_id} ({other.source_type}): {other.description}"
+                    )
+                other_sources_str = f"""
+## OTHER SOURCES BEING EXTRACTED SEPARATELY
+The following sources are being extracted by other agents. DO NOT include their
+information in the source you're validating - that would cause duplication:
+{chr(10).join(other_lines)}
+
+For example:
+- If you're validating business_income and see business_dividends above, the dividend
+  amounts are captured there - do NOT add them to annual_income_from_business.
+- If you're validating employment_income and see another employment source above,
+  do NOT combine salaries from different employers.
+"""
+
         return f"""{context_str}## NARRATIVE
 {narrative}
 
@@ -259,6 +286,10 @@ Source Type: {source.source_type}
 Source ID: {source.source_id}
 Description: {source.description}
 
+IMPORTANT: You are validating a "{source.source_type}" source. Do NOT include information
+that belongs to OTHER source types (e.g., if validating business_income, do NOT add
+dividend amounts which belong in business_dividends).
+{other_sources_str}
 ## ANCHOR FIELDS (use these to identify WHICH instance this is)
 These fields are already validated and tell you which specific instance in the
 narrative you are working with. For example, if this is an employment source,
@@ -293,6 +324,7 @@ distinguish which one you're validating.
         context: dict | None,
         source: SourceOfWealth,
         issues: list[ValidationIssue],
+        all_sources: list[SourceOfWealth] | None = None,
     ) -> SourceValidationResult:
         """Validate all flagged fields for a single source instance.
 
@@ -304,6 +336,7 @@ distinguish which one you're validating.
             context: Account holder context
             source: The source being validated
             issues: List of validation issues for this source
+            all_sources: All sources being extracted (to avoid duplicating info)
 
         Returns:
             SourceValidationResult with corrections for all flagged fields
@@ -312,7 +345,7 @@ distinguish which one you're validating.
         model_settings = self._build_model_settings()
 
         prompt = self._build_source_validation_prompt(
-            narrative, context, source, issues
+            narrative, context, source, issues, all_sources
         )
 
         try:
@@ -343,7 +376,9 @@ distinguish which one you're validating.
                 logger.warning("Rate limit hit for validation agent, retrying...")
             raise
         except Exception as e:
-            logger.error(f"Error validating source {source.source_id}: {e}", exc_info=True)
+            logger.error(
+                f"Error validating source {source.source_id}: {e}", exc_info=True
+            )
             # Return original values on error
             return SourceValidationResult(
                 source_id=source.source_id,
@@ -352,7 +387,9 @@ distinguish which one you're validating.
                     FieldCorrection(
                         field_name=issue.field_name,
                         value=issue.current_value,
-                        status=FieldStatus.POPULATED if issue.current_value else FieldStatus.NOT_STATED,
+                        status=FieldStatus.POPULATED
+                        if issue.current_value
+                        else FieldStatus.NOT_STATED,
                         source_quotes=[],
                         reasoning=f"Validation failed: {str(e)}",
                     )
@@ -419,6 +456,7 @@ distinguish which one you're validating.
                 context,
                 source,
                 source_issues,
+                all_sources=sources,  # Pass all sources for context
             )
             tasks.append(task)
             task_source_ids.append(source_id)
@@ -440,7 +478,9 @@ distinguish which one you're validating.
 
             # Process each field correction
             for correction in result.field_corrections:
-                original_value = original_source.extracted_fields.get(correction.field_name)
+                original_value = original_source.extracted_fields.get(
+                    correction.field_name
+                )
                 key = (source_id, correction.field_name)
 
                 # Only include if value actually changed
@@ -453,7 +493,9 @@ distinguish which one you're validating.
                     if correction.reasoning:
                         logger.info(f"  Correction reasoning: {correction.reasoning}")
                 else:
-                    logger.info(f"CONFIRMED {source_id}.{correction.field_name}: '{correction.value}'")
+                    logger.info(
+                        f"CONFIRMED {source_id}.{correction.field_name}: '{correction.value}'"
+                    )
 
         logger.info(f"Validation complete: {len(corrections)} corrections made")
 

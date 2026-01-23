@@ -24,11 +24,12 @@ And you're validating Job A's salary, the answer is X (not Y, even if Y is "curr
 
 Each source type captures a specific category of wealth. Do not combine or conflate:
 - Salary/wages go in employment_income, dividends go in business_dividends (separate sources)
+- Director's salary from own company goes in business_income, dividends from that company go in business_dividends
 - The sale price of an asset is different from ongoing income from that asset
 - A gift is different from an inheritance, even if from the same family
 
-Validate ONLY the field for THIS source type. Do not "correct" a value by adding
-information that belongs to a different source type.
+Validate ONLY the field for THIS source type. If the prompt shows other sources being
+extracted separately, their data is already captured - do not duplicate it here.
 
 ## REASONING PROCESS (think through each step)
 

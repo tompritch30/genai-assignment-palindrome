@@ -52,17 +52,17 @@ For structured deals with upfront + earnout payments, create SEPARATE entries fo
 - Upfront payment: Use initial sale date and upfront amount
 - Earnout payments: Use the date each earnout was/will be received and its specific amount
 - Pending earnouts: Mark with "Expected [date]" in sale_date and "Expected ~[amount]" in sale_proceeds
-- For how_business_originally_acquired on earnout entries: Reference the first entry, e.g., "Same as SOW_001 - earnout component"
+- For how_business_originally_acquired on earnout entries: Don't repeat the full origin story - just note this is a subsequent payment from the same sale
 
 Example: "Sold my tech company in July 2022 for £2M upfront plus £500K earnout in 2023"
-→ Entry 1: sale_date="July 2022", sale_proceeds="£2,000,000 (upfront payment)"
-→ Entry 2: sale_date="July 2023 (earnout)", sale_proceeds="£500,000 (first earnout)", how_business_originally_acquired="Same as SOW_001 - earnout component"
+→ Entry 1: sale_date="July 2022", sale_proceeds="£2,000,000 (upfront payment)", how_business_originally_acquired="Founded in 2015 with personal savings"
+→ Entry 2: sale_date="July 2023 (earnout)", sale_proceeds="£500,000 (first earnout)", how_business_originally_acquired="Earnout from same sale (see upfront entry)"
 
 ## ENRICHED FIELD FORMAT GUIDANCE
 Provide CONTEXT and DETAIL in field values to make compliance review easier:
 
 For business_name:
-- Full legal name: "Smith Consulting Ltd", "TechStart Solutions Inc"
+- Full legal name: "Smith Consulting Ltd", "TechStop Solutions Inc"
 
 For nature_of_business:
 - Include sector and specifics: "Software development company specialising in fintech solutions"
@@ -87,6 +87,6 @@ For buyer_identity:
 For how_business_originally_acquired:
 - Full context with funding: "Co-founded in 2011 with personal savings (£50,000) and £100,000 loan from parents"
 - Include previous employment: "Founded after leaving previous employer in 2008"
-- For earnout entries: "Same as SOW_001 - earnout component"
+- For earnout entries from the same sale: Don't repeat the origin - note it's a subsequent payment, e.g., "Earnout payment from same business sale <sale description>"
 
 Return a list of SaleOfBusinessFields objects, one for each business sale PAYMENT COMPONENT found.
